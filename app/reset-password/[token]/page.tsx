@@ -38,13 +38,8 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#050508] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="3" /><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-              </svg>
-            </div>
-            <span className="text-white font-semibold text-lg">m-ops</span>
+          <div className="mb-6">
+            <span className="text-white font-bold text-2xl tracking-tight">m-ops</span>
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Set new password</h1>
           <p className="text-[#94a3b8] text-sm">Choose a strong password for your account</p>

@@ -466,12 +466,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ borderTop: "1px solid #1a1a1a", background: "#0a0a0a", padding: "28px 48px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-            <div style={{ width: "22px", height: "22px", background: "#fff", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <CommandIcon size={10} color="#0a0a0a" />
-            </div>
-            <span style={{ color: "#555", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.02em" }}>m-ops</span>
-          </div>
+          <span style={{ color: "#555", fontSize: "13px", fontWeight: 700, letterSpacing: "-0.04em" }}>m-ops</span>
           <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
             <Link href="/terms" style={{ color: "#333", fontSize: "12px", textDecoration: "none" }}>Terms</Link>
             <Link href="/privacy" style={{ color: "#333", fontSize: "12px", textDecoration: "none" }}>Privacy</Link>
