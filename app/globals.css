@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f5f5;
+  --foreground: #0a0a0a;
 }
 
 @theme inline {
@@ -15,12 +15,91 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground: #f0f0f0;
   }
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+  50% { opacity: 0.7; transform: scale(1.2); box-shadow: 0 0 0 4px transparent; }
+}
+
+@keyframes status-glow {
+  0%, 100% { box-shadow: 0 0 4px 1px var(--dot-color, #60a5fa); opacity: 1; }
+  50% { box-shadow: 0 0 10px 3px var(--dot-color, #60a5fa); opacity: 0.6; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes count-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes scan-line {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 0.06; }
+  90%  { opacity: 0.06; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-count-in {
+  animation: count-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.status-dot-nominal {
+  animation: status-glow 2.4s ease-in-out infinite;
+  --dot-color: #4ade80;
+}
+
+.status-dot-offline {
+  animation: status-pulse 1.2s ease-in-out infinite;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #2e2e2e; }
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  /* Settings layout: stack sidebar above content */
+  .settings-layout { flex-direction: column !important; }
+  .settings-sidebar { width: 100% !important; display: flex !important; flex-wrap: wrap !important; gap: 4px !important; }
+  .settings-sidebar button { flex: 1 !important; min-width: 120px !important; justify-content: center !important; }
+  .settings-billing-grid { grid-template-columns: 1fr !important; }
+
+  /* Pricing cards: stack */
+  .pricing-grid { grid-template-columns: 1fr !important; }
+
+  /* Landing page nav */
+  .landing-nav-links { display: none !important; }
+
+  /* General padding reduction */
+  .mobile-px { padding-left: 20px !important; padding-right: 20px !important; }
 }
