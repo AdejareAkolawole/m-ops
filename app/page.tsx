@@ -7,21 +7,23 @@ import {
   AiScanIcon, ScanIcon,
 } from "hugeicons-react"
 
-function useInView(threshold = 0.08) {
+function useInView() {
   const ref = useRef<HTMLDivElement>(null)
   const [inView, setInView] = useState(false)
+  const fired = useRef(false)
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    // already above viewport (user jumped to bottom) — show immediately
-    if (el.getBoundingClientRect().bottom < 0) { setInView(true); return }
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect() } },
-      { threshold, rootMargin: "0px 0px 60px 0px" }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
+    const check = () => {
+      if (fired.current || !ref.current) return
+      const { top, bottom } = ref.current.getBoundingClientRect()
+      if (bottom > 0 && top < window.innerHeight + 80) {
+        fired.current = true
+        setInView(true)
+      }
+    }
+    check()
+    window.addEventListener("scroll", check, { passive: true })
+    return () => window.removeEventListener("scroll", check)
+  }, [])
   return { ref, inView }
 }
 
@@ -64,27 +66,30 @@ export default function LandingPage() {
         *, *::before, *::after { box-sizing: border-box; }
 
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(28px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(36px); filter: blur(4px); }
+          to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
         @keyframes floatA { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
         @keyframes floatB { 0%,100% { transform:translateY(0); } 50% { transform:translateY(9px);  } }
 
-        .hero-badge   { animation: fadeUp 0.6s cubic-bezier(.22,.68,0,1.2) 0.05s both; }
-        .hero-h1      { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.18s both; }
-        .hero-sub     { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.32s both; }
-        .hero-ctas    { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.46s both; }
-        .hero-note    { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.58s both; }
-        .hero-mockup  { animation: fadeUp 0.9s cubic-bezier(.22,.68,0,1.2) 0.72s both; }
+        .hero-badge   { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) 0.05s both; }
+        .hero-h1      { animation: fadeUp 0.85s cubic-bezier(.22,.68,0,1.2) 0.2s both; }
+        .hero-sub     { animation: fadeUp 0.75s cubic-bezier(.22,.68,0,1.2) 0.38s both; }
+        .hero-ctas    { animation: fadeUp 0.75s cubic-bezier(.22,.68,0,1.2) 0.54s both; }
+        .hero-note    { animation: fadeUp 0.6s cubic-bezier(.22,.68,0,1.2) 0.68s both; }
+        .hero-mockup  { animation: fadeUp 1s cubic-bezier(.22,.68,0,1.2) 0.85s both; }
 
         .reveal {
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.65s cubic-bezier(.22,.68,0,1.2), transform 0.65s cubic-bezier(.22,.68,0,1.2);
+          transform: translateY(48px);
+          filter: blur(6px);
+          transition: opacity 0.75s cubic-bezier(.22,.68,0,1.2),
+                      transform 0.75s cubic-bezier(.22,.68,0,1.2),
+                      filter 0.75s ease;
         }
-        .reveal.in { opacity: 1; transform: translateY(0); }
+        .reveal.in { opacity: 1; transform: translateY(0); filter: blur(0); }
 
         .feat-card { transition: background 0.18s, box-shadow 0.18s, transform 0.18s; }
         .feat-card:hover { background: #f7f7f7 !important; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
