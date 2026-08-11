@@ -157,6 +157,34 @@ export async function sendCallConfirmationEmail(to: string, name: string | null,
   `))
 }
 
+export async function sendProjectDownAlert(to: string, projectName: string, projectUrl: string, error: string | null) {
+  await send(to, `${projectName} is down`, wrap(`
+    ${badge("● Down", "#e03e3e", "#fff0f0")}
+    <h1 style="color:#0a0a0a;font-size:24px;font-weight:700;margin:0 0 12px;letter-spacing:-0.03em">${projectName} is not responding.</h1>
+    <p style="color:#666;font-size:15px;line-height:1.7;margin:0 0 4px">We detected an issue with your project. Here are the details:</p>
+    ${infoBox([
+      { key: "Project", val: projectName },
+      { key: "URL", val: projectUrl },
+      { key: "Error", val: error || "No response from server" },
+    ])}
+    ${cta("View project →", `${BASE_URL}/dashboard`)}
+  `, `<a href="${BASE_URL}/settings" style="color:#999;text-decoration:none;margin-right:16px">Manage alerts</a>`))
+}
+
+export async function sendProjectUpAlert(to: string, projectName: string, projectUrl: string, responseMs: number | null) {
+  await send(to, `${projectName} is back up`, wrap(`
+    ${badge("● Back online", "#18a34a", "#f0fff4")}
+    <h1 style="color:#0a0a0a;font-size:24px;font-weight:700;margin:0 0 12px;letter-spacing:-0.03em">${projectName} is back online.</h1>
+    <p style="color:#666;font-size:15px;line-height:1.7;margin:0 0 4px">Your project has recovered and is responding normally.</p>
+    ${infoBox([
+      { key: "Project", val: projectName },
+      { key: "URL", val: projectUrl },
+      ...(responseMs ? [{ key: "Response", val: `${responseMs}ms` }] : []),
+    ])}
+    ${cta("View dashboard →", `${BASE_URL}/dashboard`)}
+  `, `<a href="${BASE_URL}/settings" style="color:#999;text-decoration:none;margin-right:16px">Manage alerts</a>`))
+}
+
 export async function sendSupportCallAlert(userName: string | null, userEmail: string | null, topic: string, date: string | null, time: string | null) {
   await send(ADMIN, `[m-ops] Support call: ${topic}`, wrap(`
     ${badge("Support call booked", "#0a0a0a", "#f0f0f0")}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { planConfig } from "@/lib/plans"
+import { sendProjectDownAlert, sendProjectUpAlert } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -22,31 +23,14 @@ export async function POST(req: NextRequest) {
 
   // ── Email alert (Free+) ──────────────────────────────────────────────────
   if (user.notifyEmail && user.notifyIncidents) {
-    const resendKey = process.env.RESEND_API_KEY
-    if (resendKey) {
-      try {
-        const subject = isDown
-          ? `🔴 ${projectName} is down`
-          : `✅ ${projectName} is back up`
-        const body = isDown
-          ? `<p>Your project <strong>${projectName}</strong> (${projectUrl}) is <strong>down</strong>.</p><p>Error: ${checkError || "No response"}</p>`
-          : `<p>Your project <strong>${projectName}</strong> (${projectUrl}) is <strong>back online</strong>. Response time: ${responseMs}ms.</p>`
-
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
-          body: JSON.stringify({
-            from: "m-ops <alerts@m-ops.pro>",
-            to: [user.email],
-            subject,
-            html: `<div style="font-family:sans-serif;max-width:500px">${body}<hr/><p style="color:#888;font-size:12px">m-ops monitoring · <a href="https://m-ops.pro/settings">Manage alerts</a></p></div>`,
-          }),
-        })
-        results.email = emailRes.ok ? "sent" : "failed"
-      } catch { results.email = "error" }
-    } else {
-      results.email = "no_api_key"
-    }
+    try {
+      if (isDown) {
+        await sendProjectDownAlert(user.email!, projectName, projectUrl, checkError || null)
+      } else {
+        await sendProjectUpAlert(user.email!, projectName, projectUrl, responseMs ?? null)
+      }
+      results.email = "sent"
+    } catch { results.email = "error" }
   }
 
   // ── Slack alert (Pro+) ────────────────────────────────────────────────────
