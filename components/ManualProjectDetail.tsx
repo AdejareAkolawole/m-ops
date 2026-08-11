@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import { ManualProject, CheckResult, HubHealthResponse } from "@/lib/types"
-import { deleteManualProject, saveManualProject, pushCheck, getChecks } from "@/lib/store"
+import { pushCheck, getChecks } from "@/lib/store"
 import {
   ArrowLeft01Icon, ArrowReloadHorizontalIcon, LinkSquare02Icon,
   Loading03Icon, CheckmarkCircle02Icon, AlertCircleIcon,
@@ -374,7 +374,6 @@ function SettingsTab({ project, onUpdated, onDeleted }: { project: ManualProject
       adminApiUrl: adminApiUrl.trim() || undefined,
       adminApiToken: adminApiToken.trim() || undefined,
     }
-    saveManualProject(updated)
     onUpdated(updated)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -425,7 +424,7 @@ function SettingsTab({ project, onUpdated, onDeleted }: { project: ManualProject
           </button>
         ) : (
           <div className="flex items-center gap-2">
-            <button onClick={() => { deleteManualProject(project.id); onDeleted() }}
+            <button onClick={() => onDeleted() }
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-red-500 hover:bg-red-600 text-white transition-colors">
               <Delete02Icon size={12} /> Yes, delete
             </button>

@@ -5,11 +5,35 @@ import { VercelSyncedProject, ManualProject, HostingProvider, ProviderProject } 
 import {
   getVercelAccount, getVercelProjects, saveVercelProjects,
   updateVercelProject, clearVercelAccount,
-  getManualProjects, saveManualProject, deleteManualProject,
   getVercelSelectedIds, saveVercelSelectedIds, clearVercelSelectedIds,
   getChecks, getAllChecks, saveProviderProjects,
   saveGitHubAccount,
 } from "@/lib/store"
+import type { ManualProject } from "@/lib/types"
+
+function dbToManual(p: any): ManualProject {
+  const meta = p.metadata ? JSON.parse(p.metadata) : {}
+  return {
+    id: p.id, name: p.name, url: p.url,
+    hubSecret: meta.hubSecret ?? "",
+    healthEndpoint: meta.healthEndpoint ?? "/api/hub/health",
+    adminUrl: meta.adminUrl,
+    adminApiUrl: meta.adminApiUrl,
+    adminApiToken: meta.adminApiToken,
+    description: meta.description,
+    addedAt: p.createdAt ?? new Date().toISOString(),
+    lastChecked: meta.lastChecked,
+    lastStatus: meta.lastStatus,
+  }
+}
+
+function manualMeta(p: ManualProject) {
+  return JSON.stringify({
+    hubSecret: p.hubSecret, healthEndpoint: p.healthEndpoint,
+    adminUrl: p.adminUrl, adminApiUrl: p.adminApiUrl,
+    adminApiToken: p.adminApiToken, description: p.description,
+  })
+}
 import { ConnectVercel } from "@/components/ConnectVercel"
 import { ConnectProvider } from "@/components/ConnectProvider"
 import { LiveBar, pushLiveEvent } from "@/components/LiveBar"
@@ -90,7 +114,11 @@ export default function Home() {
       setShowPicker(true)
       setAllVercelProjects(all)
     }
-    setManualProjects(getManualProjects())
+    // Load manual projects from DB
+    fetch("/api/projects")
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setManualProjects(data.map(dbToManual)) })
+      .catch(() => {})
 
     // Handle GitHub OAuth return — token arrives in URL params
     const params = new URLSearchParams(window.location.search)
@@ -111,9 +139,8 @@ export default function Home() {
           setSelected({ type: "vercel", project: shown[0] })
           setActiveTab("insights")
         } else {
-          const manuals = getManualProjects()
-          if (manuals.length > 0) {
-            setSelected({ type: "manual", project: manuals[0] })
+          if (manualProjects.length > 0) {
+            setSelected({ type: "manual", project: manualProjects[0] })
             setActiveTab("insights")
           }
         }
@@ -181,12 +208,11 @@ export default function Home() {
 
     function pingAll() {
       const vProjects = getVercelProjects()
-      const mProjects = getManualProjects()
       for (const p of vProjects) {
         const url = p.productionUrl ?? (p.latestDeployment ? `https://${p.latestDeployment.url}` : null)
         if (url) checkUptime(p.id, url, p.name)
       }
-      for (const p of mProjects) {
+      for (const p of manualProjects) {
         checkUptime(p.id, p.url, p.name)
       }
     }
@@ -194,7 +220,7 @@ export default function Home() {
     pingAll()
     const interval = setInterval(pingAll, 60_000)
     return () => clearInterval(interval)
-  }, [mounted, checkUptime])
+  }, [mounted, checkUptime, manualProjects])
 
   function handleVercelConnected(ps: VercelSyncedProject[]) {
     setAllVercelProjects(ps)
@@ -324,10 +350,20 @@ export default function Home() {
                 onBack={() => setSelected(null)}
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
-                onDeleted={() => { setManualProjects(getManualProjects()); setSelected(null) }}
-                onUpdated={(p) => {
-                  saveManualProject(p)
-                  setManualProjects(getManualProjects())
+                onDeleted={async () => {
+                  if (selected?.type === "manual") {
+                    await fetch(`/api/projects/${selected.project.id}`, { method: "DELETE" })
+                    setManualProjects(prev => prev.filter(p => p.id !== selected.project.id))
+                  }
+                  setSelected(null)
+                }}
+                onUpdated={async (p) => {
+                  await fetch(`/api/projects/${p.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: p.name, url: p.url, metadata: manualMeta(p) }),
+                  })
+                  setManualProjects(prev => prev.map(mp => mp.id === p.id ? p : mp))
                   setSelected({ type: "manual", project: p })
                 }}
               />
@@ -421,7 +457,20 @@ export default function Home() {
       {showAddProject && (
         <AddProjectModal
           onClose={() => setShowAddProject(false)}
-          onAdded={(p) => { setManualProjects(getManualProjects()); setShowAddProject(false); checkUptime(p.id, p.url) }}
+          onAdded={async (p) => {
+            const res = await fetch("/api/projects", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: p.name, url: p.url, type: "manual", metadata: manualMeta(p) }),
+            })
+            if (res.ok) {
+              const saved = await res.json()
+              const mp = dbToManual(saved)
+              setManualProjects(prev => [mp, ...prev])
+              checkUptime(mp.id, mp.url)
+            }
+            setShowAddProject(false)
+          }}
           onConnectVercel={() => { setShowAddProject(false); setShowConnect(true) }}
           onConnectProvider={(p) => { setShowAddProject(false); setConnectingProvider(p) }}
         />

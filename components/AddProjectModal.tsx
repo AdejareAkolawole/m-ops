@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { Cancel01Icon, Copy01Icon, CheckmarkCircle02Icon, ArrowDown01Icon, ArrowUp01Icon, AddSquareIcon } from "hugeicons-react"
 import { ProjectConfig, HostingProvider } from "@/lib/types"
-import { saveProject } from "@/lib/store"
+
 import { cn } from "@/lib/utils"
 
 interface Props {
@@ -97,7 +97,6 @@ export function AddProjectModal({ onClose, onAdded, onConnectVercel, onConnectPr
 
   function handleFinish() {
     if (!project) return
-    saveProject(project)
     onAdded(project)
   }
 
