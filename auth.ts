@@ -56,9 +56,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
-        // Fetch emailVerified so middleware can gate unverified users
         const dbUser = await prisma.user.findUnique({ where: { id: user.id! }, select: { emailVerified: true } })
         token.emailVerified = dbUser?.emailVerified ?? null
+      }
+      // Re-check DB if still unverified — picks up verification that happened after sign-in
+      if (!token.emailVerified && token.id) {
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string }, select: { emailVerified: true } })
+        if (dbUser?.emailVerified) token.emailVerified = dbUser.emailVerified
       }
       if (account?.provider === "github" && account.access_token) {
         token.githubToken = account.access_token

@@ -22,5 +22,5 @@ export async function GET(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { email: record.identifier } })
   if (user) sendWelcomeEmail(user.email!, user.name ?? null).catch(() => {})
 
-  return NextResponse.redirect(new URL("/login?verified=1", req.url))
+  return NextResponse.redirect(new URL("/login?verified=1&callbackUrl=/dashboard", req.url))
 }
