@@ -9,8 +9,6 @@ import {
   getChecks, getAllChecks, saveProviderProjects,
   saveGitHubAccount, savePlanCache,
 } from "@/lib/store"
-import type { ManualProject } from "@/lib/types"
-
 function dbToManual(p: any): ManualProject {
   const meta = p.metadata ? JSON.parse(p.metadata) : {}
   return {
@@ -181,7 +179,8 @@ export default function Home() {
 
         // Status change toasts
         if (prevOk === true && !data.ok) {
-          // went down
+          // Alert: went down
+          fetch("/api/alerts/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectName: name, projectUrl: url, status: "down", error: data.error }) }).catch(() => {})
           setToasts(ts => [...ts, {
             id: `${id}-${Date.now()}`, type: "down", projectName: name,
             projectId: id, message: "Service is unreachable", startedAt: Date.now(),
@@ -194,7 +193,8 @@ export default function Home() {
           }])
           pushLiveEvent({ type: "down", projectName: name, message: "went UNREACHABLE" })
         } else if (prevOk === false && data.ok) {
-          // recovered
+          // Alert: recovered
+          fetch("/api/alerts/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectName: name, projectUrl: url, status: "up", responseMs: data.responseMs }) }).catch(() => {})
           setToasts(ts => [...ts, { id: `${id}-${Date.now()}`, type: "recover", projectName: name, message: "Back online — recovered", startedAt: Date.now() }])
           pushLiveEvent({ type: "recover", projectName: name, message: "recovered ✓", ms: data.responseMs })
         }
@@ -208,10 +208,14 @@ export default function Home() {
 
   // Auto-ping all projects — interval is plan-based (30s Pro/Team, 300s Free)
   const [checkIntervalMs, setCheckIntervalMs] = useState(60_000)
+  const [userPlan, setUserPlan] = useState<string>("free")
+  const [planCfg, setPlanCfg] = useState<{ maxProjects: number; checkIntervalSec: number; historyDays: number; ai: boolean; slackAlerts: boolean } | null>(null)
   useEffect(() => {
     fetch("/api/user/plan-config").then(r => r.json()).then(d => {
       if (d.config?.checkIntervalSec) setCheckIntervalMs(d.config.checkIntervalSec * 1000)
       if (d.plan && d.config?.historyDays) savePlanCache(d.plan, d.config.historyDays)
+      if (d.plan) setUserPlan(d.plan)
+      if (d.config) setPlanCfg(d.config)
     }).catch(() => {})
   }, [])
 
@@ -448,7 +452,53 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "14px 28px 0", gap: "8px" }}>
+                  {/* ── Plan banner ── */}
+                  {planCfg && (
+                    <div style={{ margin: "14px 28px 0", padding: "12px 16px", background: "#0d0d0d", border: "1px solid #1c1c1c", borderRadius: 12, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+                          padding: "2px 8px", borderRadius: 6, textTransform: "uppercase" as const,
+                          background: userPlan === "team" ? "#0d2a1a" : userPlan === "pro" ? "#1e1b4b" : "#1a1a1a",
+                          color: userPlan === "team" ? "#4ade80" : userPlan === "pro" ? "#a5b4fc" : "#666",
+                          border: `1px solid ${userPlan === "team" ? "#1a4a2a" : userPlan === "pro" ? "#2a1a5e" : "#222"}`,
+                        }}>{userPlan}</span>
+                        <span style={{ fontSize: 12, color: "#444" }}>plan</span>
+                      </div>
+                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12, color: "#555" }}>Projects</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>
+                          {manualProjects.length} / {planCfg.maxProjects === Infinity ? "∞" : planCfg.maxProjects}
+                        </span>
+                      </div>
+                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12, color: "#555" }}>Checks every</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>
+                          {planCfg.checkIntervalSec >= 60 ? `${planCfg.checkIntervalSec / 60}m` : `${planCfg.checkIntervalSec}s`}
+                        </span>
+                      </div>
+                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12, color: "#555" }}>History</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>{planCfg.historyDays}d</span>
+                      </div>
+                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {planCfg.ai && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#0d1a0d", color: "#4ade80", border: "1px solid #1a3a1a" }}>AI</span>}
+                        {planCfg.slackAlerts && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#0d1220", color: "#818cf8", border: "1px solid #1a2040" }}>Slack</span>}
+                        {!planCfg.ai && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#1a1a1a", color: "#333", border: "1px solid #222" }}>No AI</span>}
+                      </div>
+                      {userPlan === "free" && (
+                        <a href="/settings#billing" style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 600, color: "#a5b4fc", textDecoration: "none", padding: "4px 10px", border: "1px solid #2a1a5e", borderRadius: 7, background: "#1e1b4b", whiteSpace: "nowrap" as const }}>
+                          Upgrade →
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "12px 28px 0", gap: "8px" }}>
                     <button onClick={() => setShowAddProject(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, background: "#181818", color: "#e8e8e8", cursor: "pointer", border: "1px solid #242424" }}>
                       <AddSquareIcon size={13} /> Add Project
                     </button>

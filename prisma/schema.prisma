@@ -20,12 +20,17 @@ model User {
   notifyEmail          Boolean              @default(true)
   notifyIncidents      Boolean              @default(true)
   notifyWeeklyReport   Boolean              @default(false)
+  slackWebhookUrl      String?
+  pagerdutyKey         String?
+  customIntervalSec    Int?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   accounts             Account[]
   sessions             Session[]
   projects             Project[]
   passwordResetTokens  PasswordResetToken[]
+  teamMembers          TeamMember[]         @relation("TeamOwner")
+  onCallSchedules      OnCallSchedule[]
 }
 
 model Project {
@@ -76,6 +81,32 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  ownerId   String
+  email     String
+  name      String?
+  role      String   @default("member")
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  owner     User     @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, email])
+}
+
+model OnCallSchedule {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  email     String
+  startHour Int      @default(0)
+  endHour   Int      @default(23)
+  days      String   @default("0,1,2,3,4,5,6")
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

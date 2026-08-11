@@ -14,7 +14,7 @@ import { CmsPanel } from "@/components/CmsPanel"
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard"
 import { saveProjectAdminConfig } from "@/lib/store"
 
-type Tab = "overview" | "performance" | "incidents" | "settings" | "cms"
+type Tab = "overview" | "performance" | "incidents" | "settings" | "cms" | "sla"
 
 const TIME_WINDOWS = [
   { label: "1h",  ms: 60 * 60 * 1000 },
@@ -109,6 +109,7 @@ export function ManualProjectDetail({ project, onBack, onDeleted, onUpdated, act
         {tab === "performance" && <PerformanceTab history={history} />}
         {tab === "incidents"   && <IncidentsTab history={history} />}
         {tab === "settings"    && <SettingsTab project={project} onUpdated={onUpdated} onDeleted={onDeleted} />}
+        {tab === "sla"         && <SlaTab history={history} projectName={project.name} />}
         {tab === "cms" && (
           <div className="p-6 max-w-3xl">
             <CmsPanel
@@ -764,6 +765,111 @@ function AdminDataPanel({ apiUrl, apiToken }: { apiUrl: string; apiToken?: strin
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function SlaTab({ history, projectName }: { history: CheckResult[]; projectName: string }) {
+  const windows = [
+    { label: "Last 24h",  ms: 24 * 3600_000 },
+    { label: "Last 7d",   ms: 7 * 86400_000 },
+    { label: "Last 30d",  ms: 30 * 86400_000 },
+    { label: "Last 90d",  ms: 90 * 86400_000 },
+  ]
+
+  function calcSla(ms: number) {
+    const cutoff = Date.now() - ms
+    const slice = history.filter(h => new Date(h.timestamp).getTime() > cutoff)
+    if (slice.length === 0) return null
+    const up = slice.filter(h => h.status === "online").length
+    return { pct: (up / slice.length) * 100, checks: slice.length, up, down: slice.length - up }
+  }
+
+  const incidents = history.reduce<{ start: string; end?: string; durationMs?: number }[]>((acc, h, i) => {
+    if (h.status !== "online") {
+      if (i === 0 || history[i - 1]?.status === "online") acc.push({ start: h.timestamp })
+      else if (acc.length > 0 && !acc[acc.length - 1].end) {
+        // still in incident — do nothing
+      }
+    } else if (acc.length > 0 && !acc[acc.length - 1].end) {
+      const last = acc[acc.length - 1]
+      last.end = h.timestamp
+      last.durationMs = new Date(h.timestamp).getTime() - new Date(last.start).getTime()
+    }
+    return acc
+  }, []).slice(0, 10)
+
+  function fmt(ms: number) {
+    if (ms < 60000) return `${Math.round(ms / 1000)}s`
+    if (ms < 3600000) return `${Math.round(ms / 60000)}m`
+    return `${(ms / 3600000).toFixed(1)}h`
+  }
+
+  function pctColor(pct: number) {
+    if (pct >= 99.9) return "#4ade80"
+    if (pct >= 99) return "#86efac"
+    if (pct >= 95) return "#fbbf24"
+    return "#f87171"
+  }
+
+  if (history.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-zinc-500 text-sm">No check history yet — run a check to start collecting SLA data.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 space-y-5 max-w-3xl">
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">Uptime SLA</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {windows.map(w => {
+            const r = calcSla(w.ms)
+            return (
+              <div key={w.label} className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4 text-center">
+                <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">{w.label}</p>
+                {r ? (
+                  <>
+                    <p className="text-2xl font-bold" style={{ color: pctColor(r.pct) }}>{r.pct.toFixed(2)}%</p>
+                    <p className="text-[10px] text-zinc-500 mt-1">{r.up} up / {r.down} down</p>
+                  </>
+                ) : (
+                  <p className="text-xl font-bold text-zinc-400">—</p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3">Recent incidents</h2>
+        {incidents.length === 0 ? (
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 p-4 text-center">
+            <p className="text-sm text-zinc-500">No incidents recorded — 100% uptime 🎉</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+            {incidents.map((inc, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3 gap-4">
+                <div>
+                  <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{new Date(inc.start).toLocaleString()}</p>
+                  {inc.end && <p className="text-[11px] text-zinc-400">Recovered: {new Date(inc.end).toLocaleString()}</p>}
+                </div>
+                <span className="text-xs font-mono text-red-500 shrink-0">
+                  {inc.durationMs ? fmt(inc.durationMs) : "ongoing"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="text-[11px] text-zinc-400">
+        Based on {history.length} checks for <strong>{projectName}</strong>. Data stored locally — up to {Math.round(history.length)} records.
+      </div>
     </div>
   )
 }

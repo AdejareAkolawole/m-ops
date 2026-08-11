@@ -108,6 +108,9 @@ export default function AdminPage() {
   const [editEmail, setEditEmail] = useState("")
   const [editPlan, setEditPlan] = useState("free")
   const [editLoading, setEditLoading] = useState(false)
+  const [changingPlanId, setChangingPlanId] = useState<string | null>(null)
+  const [quickPlan, setQuickPlan] = useState("free")
+  const [quickPlanLoading, setQuickPlanLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [resetId, setResetId] = useState<string | null>(null)
   const [resetPw, setResetPw] = useState("")
@@ -149,6 +152,17 @@ export default function AdminPage() {
 
   useEffect(() => { if (tab === "users") loadUsers() }, [tab, loadUsers])
   useEffect(() => { if (tab === "sessions") loadSessions() }, [tab, loadSessions])
+
+  async function saveQuickPlan(id: string) {
+    setQuickPlanLoading(true)
+    try {
+      const res = await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, plan: quickPlan }) })
+      const data = await res.json()
+      if (!res.ok) return err(data.error || "Failed to update plan")
+      setUsers(u => u.map(x => x.id === id ? { ...x, plan: data.plan } : x))
+      setChangingPlanId(null); ok(`Plan set to ${quickPlan}`)
+    } finally { setQuickPlanLoading(false) }
+  }
 
   async function saveEdit(id: string) {
     setEditLoading(true)
@@ -459,10 +473,35 @@ export default function AdminPage() {
                                       {[["ID", u.id], ["Email verified", u.emailVerified ? fmtDate(u.emailVerified) : "Not verified"], ["Last updated", timeAgo(u.updatedAt)], ["OAuth accounts", String(u._count.accounts)]].map(([k, v]) => (
                                         <div key={k} style={{ paddingBottom: 8 }}>
                                           <p style={{ fontSize: 11, color: "#333", marginBottom: 2 }}>{k}</p>
-                                          <p style={{ fontSize: 12.5, color: "#888", fontFamily: k === "ID" ? "monospace" : "inherit", fontSize: k === "ID" ? 10.5 : 12.5 } as React.CSSProperties}>{v}</p>
+                                          <p style={{ fontSize: k === "ID" ? 10.5 : 12.5, color: "#888", fontFamily: k === "ID" ? "monospace" : "inherit" } as React.CSSProperties}>{v}</p>
                                         </div>
                                       ))}
                                     </div>
+
+                                    {/* Quick plan changer */}
+                                    {changingPlanId === u.id ? (
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "10px 14px", background: "#111", border: "1px solid #1e1e1e", borderRadius: 10 }}>
+                                        <span style={{ fontSize: 12, color: "#888" }}>Set plan:</span>
+                                        <select value={quickPlan} onChange={e => setQuickPlan(e.target.value)} style={{ ...inputStyle, margin: 0, padding: "5px 10px", fontSize: 12, width: "auto" }}>
+                                          <option value="free">Free — $0/mo</option>
+                                          <option value="pro">Pro — $2/mo</option>
+                                          <option value="team">Team — $5/mo</option>
+                                        </select>
+                                        <button onClick={() => saveQuickPlan(u.id)} disabled={quickPlanLoading} style={{ ...btnPrimary, padding: "6px 14px", fontSize: 12 }}>
+                                          {quickPlanLoading ? "Saving…" : "Save"}
+                                        </button>
+                                        <button onClick={() => setChangingPlanId(null)} style={{ ...btnGhost, padding: "6px 12px", fontSize: 12 }}>Cancel</button>
+                                      </div>
+                                    ) : (
+                                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "10px 14px", background: "#0d0d0d", border: "1px solid #161616", borderRadius: 10 }}>
+                                        <span style={{ fontSize: 12, color: "#555" }}>Current plan:</span>
+                                        <PlanBadge plan={u.plan || "free"} />
+                                        <span style={{ fontSize: 11.5, color: "#444" }}>{u._count.projects ?? 0} projects</span>
+                                        <button onClick={() => { setChangingPlanId(u.id); setQuickPlan(u.plan || "free") }} style={{ marginLeft: "auto", ...btnPrimary, padding: "5px 14px", fontSize: 11.5 }}>
+                                          Change Plan
+                                        </button>
+                                      </div>
+                                    )}
 
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                                       <button onClick={() => { setEditingId(u.id); setEditName(u.name || ""); setEditEmail(u.email); setEditPlan(u.plan || "free") }} style={{ ...btnGhost, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>

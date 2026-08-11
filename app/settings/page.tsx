@@ -12,9 +12,16 @@ import {
   Cancel01Icon,
   Notification01Icon,
   CreditCardIcon,
+  Mail01Icon,
+  SlackIcon,
+  UserGroupIcon,
+  Clock01Icon,
+  BarChartIcon,
+  Delete02Icon,
+  AddCircleIcon,
 } from "hugeicons-react"
 
-type Tab = "profile" | "security" | "notifications" | "billing"
+type Tab = "profile" | "security" | "notifications" | "alerts" | "billing" | "team" | "oncall"
 
 const S = {
   page: { minHeight: "100vh", background: "#090909", color: "#e8e8e8", fontFamily: "inherit" } as React.CSSProperties,
@@ -102,6 +109,27 @@ export default function SettingsPage() {
   const [plan, setPlan] = useState("free")
   const [billingLoading, setBillingLoading] = useState<string | null>(null)
 
+  // Alerts
+  const [slackWebhook, setSlackWebhook] = useState("")
+  const [pagerdutyKey, setPagerdutyKey] = useState("")
+  const [customInterval, setCustomInterval] = useState<number | "">(30)
+  const [alertsSaving, setAlertsSaving] = useState(false)
+
+  // Team
+  const [teamMembers, setTeamMembers] = useState<{ id: string; email: string; name?: string; status: string }[]>([])
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteName, setInviteName] = useState("")
+  const [teamLoading, setTeamLoading] = useState(false)
+
+  // On-call
+  const [schedules, setSchedules] = useState<{ id: string; name: string; email: string; startHour: number; endHour: number; days: string; timezone: string }[]>([])
+  const [ocName, setOcName] = useState("")
+  const [ocEmail, setOcEmail] = useState("")
+  const [ocStart, setOcStart] = useState(9)
+  const [ocEnd, setOcEnd] = useState(17)
+  const [ocDays, setOcDays] = useState("1,2,3,4,5")
+  const [ocLoading, setOcLoading] = useState(false)
+
   useEffect(() => {
     if (session?.user) {
       setName(session.user.name || "")
@@ -118,6 +146,13 @@ export default function SettingsPage() {
     fetch("/api/user/plan").then(r => r.json()).then(d => {
       if (d.plan) setPlan(d.plan)
     })
+    fetch("/api/user/alerts").then(r => r.json()).then(d => {
+      if (d.slackWebhookUrl) setSlackWebhook(d.slackWebhookUrl)
+      if (d.pagerdutyKey) setPagerdutyKey(d.pagerdutyKey)
+      if (d.customIntervalSec) setCustomInterval(d.customIntervalSec)
+    }).catch(() => {})
+    fetch("/api/team").then(r => r.json()).then(d => { if (Array.isArray(d)) setTeamMembers(d) }).catch(() => {})
+    fetch("/api/oncall").then(r => r.json()).then(d => { if (Array.isArray(d)) setSchedules(d) }).catch(() => {})
   }, [])
 
   function showToast(type: "success" | "error", message: string) {
@@ -184,6 +219,52 @@ export default function SettingsPage() {
     } finally { setBillingLoading(null) }
   }
 
+  async function saveAlerts() {
+    setAlertsSaving(true)
+    try {
+      const body: Record<string, unknown> = { slackWebhookUrl: slackWebhook || null, pagerdutyKey: pagerdutyKey || null }
+      if (plan === "team" && customInterval !== "") body.customIntervalSec = Number(customInterval)
+      await fetch("/api/user/alerts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      showToast("success", "Alert settings saved")
+    } finally { setAlertsSaving(false) }
+  }
+
+  async function inviteMember() {
+    if (!inviteEmail) return
+    setTeamLoading(true)
+    try {
+      const res = await fetch("/api/team", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: inviteEmail, name: inviteName }) })
+      const d = await res.json()
+      if (!res.ok) return showToast("error", d.message || d.error || "Failed to invite")
+      setTeamMembers(prev => [...prev, d])
+      setInviteEmail(""); setInviteName("")
+      showToast("success", `${inviteEmail} invited`)
+    } finally { setTeamLoading(false) }
+  }
+
+  async function removeMember(id: string) {
+    await fetch("/api/team", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+    setTeamMembers(prev => prev.filter(m => m.id !== id))
+  }
+
+  async function addSchedule() {
+    if (!ocName || !ocEmail) return
+    setOcLoading(true)
+    try {
+      const res = await fetch("/api/oncall", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: ocName, email: ocEmail, startHour: ocStart, endHour: ocEnd, days: ocDays }) })
+      const d = await res.json()
+      if (!res.ok) return showToast("error", d.message || d.error || "Failed")
+      setSchedules(prev => [...prev, d])
+      setOcName(""); setOcEmail("")
+      showToast("success", "Schedule added")
+    } finally { setOcLoading(false) }
+  }
+
+  async function removeSchedule(id: string) {
+    await fetch("/api/oncall", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+    setSchedules(prev => prev.filter(s => s.id !== id))
+  }
+
   async function deleteAccount() {
     if (deleteConfirm !== "delete my account") return
     setDeleteLoading(true)
@@ -238,6 +319,9 @@ export default function SettingsPage() {
             <TabButton active={tab === "profile"} onClick={() => setTab("profile")} icon={<UserIcon size={14} />} label="Profile" />
             <TabButton active={tab === "security"} onClick={() => setTab("security")} icon={<LockPasswordIcon size={14} />} label="Security" />
             <TabButton active={tab === "notifications"} onClick={() => setTab("notifications")} icon={<Notification01Icon size={14} />} label="Notifications" />
+            <TabButton active={tab === "alerts"} onClick={() => setTab("alerts")} icon={<Mail01Icon size={14} />} label="Alerts" />
+            {(plan === "team") && <TabButton active={tab === "team"} onClick={() => setTab("team")} icon={<UserGroupIcon size={14} />} label="Team" />}
+            {(plan === "team") && <TabButton active={tab === "oncall"} onClick={() => setTab("oncall")} icon={<Clock01Icon size={14} />} label="On-call" />}
             <TabButton active={tab === "billing"} onClick={() => setTab("billing")} icon={<CreditCardIcon size={14} />} label="Billing" />
           </div>
 
@@ -434,6 +518,161 @@ export default function SettingsPage() {
                   {notifySaving ? "Saving…" : "Save preferences"}
                 </button>
               </div>
+            )}
+
+            {tab === "alerts" && (
+              <>
+                <div style={S.card} className="settings-card">
+                  <p style={S.cardTitle}>Email alerts</p>
+                  <p style={S.cardDesc}>Alerts are sent to your account email when a project goes down or recovers. Toggle in Notifications.</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#0d0d0d", border: "1px solid #161616", borderRadius: 8 }}>
+                    <Mail01Icon size={14} color="#4ade80" />
+                    <span style={{ fontSize: 12.5, color: "#888" }}>{session?.user?.email}</span>
+                    <span style={{ marginLeft: "auto", fontSize: 11, padding: "2px 8px", borderRadius: 5, background: "#0d2a1a", color: "#4ade80", border: "1px solid #1a4a2a" }}>active</span>
+                  </div>
+                </div>
+
+                <div style={S.card} className="settings-card">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <p style={{ ...S.cardTitle, margin: 0 }}>Slack alerts</p>
+                    {plan === "free" && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#1e1b4b", color: "#a5b4fc", border: "1px solid #2a1a5e" }}>Pro+</span>}
+                  </div>
+                  <p style={S.cardDesc}>Paste your Slack incoming webhook URL to get alerts in a channel.</p>
+                  {plan === "free" ? (
+                    <div style={{ padding: "12px 14px", background: "#0d0d0d", border: "1px solid #1c1c1c", borderRadius: 8, fontSize: 12.5, color: "#444" }}>
+                      Upgrade to Pro to enable Slack alerts. <a href="#" onClick={() => setTab("billing")} style={{ color: "#a5b4fc" }}>View plans →</a>
+                    </div>
+                  ) : (
+                    <div style={S.row}>
+                      <label style={S.label}>Slack webhook URL</label>
+                      <input style={S.input} value={slackWebhook} onChange={e => setSlackWebhook(e.target.value)} placeholder="https://hooks.slack.com/services/..." />
+                    </div>
+                  )}
+                </div>
+
+                <div style={S.card} className="settings-card">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <p style={{ ...S.cardTitle, margin: 0 }}>PagerDuty</p>
+                    {plan === "free" && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#1e1b4b", color: "#a5b4fc", border: "1px solid #2a1a5e" }}>Pro+</span>}
+                  </div>
+                  <p style={S.cardDesc}>Enter your PagerDuty Events API v2 routing key to trigger incidents.</p>
+                  {plan === "free" ? (
+                    <div style={{ padding: "12px 14px", background: "#0d0d0d", border: "1px solid #1c1c1c", borderRadius: 8, fontSize: 12.5, color: "#444" }}>
+                      Upgrade to Pro to enable PagerDuty. <a href="#" onClick={() => setTab("billing")} style={{ color: "#a5b4fc" }}>View plans →</a>
+                    </div>
+                  ) : (
+                    <div style={S.row}>
+                      <label style={S.label}>PagerDuty routing key</label>
+                      <input style={S.input} value={pagerdutyKey} onChange={e => setPagerdutyKey(e.target.value)} placeholder="xxxxxxxxxxxxxxxxxxxxxx" />
+                    </div>
+                  )}
+                </div>
+
+                {plan === "team" && (
+                  <div style={S.card} className="settings-card">
+                    <p style={S.cardTitle}>Custom check interval</p>
+                    <p style={S.cardDesc}>Override the default 30-second monitoring interval (in seconds, min 10).</p>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <input type="number" min={10} max={3600} style={{ ...S.input, width: 120 }} value={customInterval} onChange={e => setCustomInterval(e.target.value === "" ? "" : Number(e.target.value))} />
+                      <span style={{ fontSize: 12, color: "#444" }}>seconds</span>
+                    </div>
+                  </div>
+                )}
+
+                {plan !== "free" && (
+                  <button onClick={saveAlerts} disabled={alertsSaving} style={{ ...S.btn, background: "#e8e8e8", color: "#000" }}>
+                    {alertsSaving ? "Saving…" : "Save alert settings"}
+                  </button>
+                )}
+              </>
+            )}
+
+            {tab === "team" && (
+              <>
+                <div style={S.card} className="settings-card">
+                  <p style={S.cardTitle}>Team seats</p>
+                  <p style={S.cardDesc}>Team plan includes 5 seats. Invite members to share your workspace.</p>
+                  <div style={{ marginBottom: 16 }}>
+                    {teamMembers.length === 0 && <p style={{ fontSize: 12.5, color: "#333" }}>No members yet. Invite someone below.</p>}
+                    {teamMembers.map(m => (
+                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid #161616" }}>
+                        <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#666", fontWeight: 700, flexShrink: 0 }}>
+                          {(m.name || m.email)[0].toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 12.5, color: "#e8e8e8", margin: 0 }}>{m.name || m.email}</p>
+                          {m.name && <p style={{ fontSize: 11.5, color: "#444", margin: 0 }}>{m.email}</p>}
+                        </div>
+                        <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: m.status === "active" ? "#0d2a1a" : "#1a1a1a", color: m.status === "active" ? "#4ade80" : "#555", border: `1px solid ${m.status === "active" ? "#1a4a2a" : "#222"}` }}>{m.status}</span>
+                        <button onClick={() => removeMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", padding: 4 }}><Delete02Icon size={13} /></button>
+                      </div>
+                    ))}
+                  </div>
+                  {teamMembers.length < 4 && (
+                    <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 10, padding: 16 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: "#888", marginBottom: 12 }}>Invite a member</p>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <input style={{ ...S.input, flex: 1, minWidth: 140 }} value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Name (optional)" />
+                        <input style={{ ...S.input, flex: 2, minWidth: 200 }} type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Email address" />
+                        <button onClick={inviteMember} disabled={teamLoading || !inviteEmail} style={{ ...S.btn, background: "#e8e8e8", color: "#000", display: "flex", alignItems: "center", gap: 6 }}>
+                          <AddCircleIcon size={13} /> {teamLoading ? "Adding…" : "Invite"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {teamMembers.length >= 4 && (
+                    <p style={{ fontSize: 12, color: "#444" }}>You've used all 5 team seats (you + 4 members).</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {tab === "oncall" && (
+              <>
+                <div style={S.card} className="settings-card">
+                  <p style={S.cardTitle}>On-call schedules</p>
+                  <p style={S.cardDesc}>Define who gets paged during specific hours. Alerts route to the on-call contact first.</p>
+                  {schedules.map(s => {
+                    const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+                    const dayLabels = s.days.split(",").map(d => dayNames[Number(d)]).join(", ")
+                    return (
+                      <div key={s.id} style={{ padding: "12px 0", borderBottom: "1px solid #161616", display: "flex", alignItems: "center", gap: 10 }}>
+                        <Clock01Icon size={14} color="#a5b4fc" />
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 12.5, fontWeight: 600, color: "#e8e8e8", margin: 0 }}>{s.name}</p>
+                          <p style={{ fontSize: 11.5, color: "#555", margin: 0 }}>{s.email} · {s.startHour}:00–{s.endHour}:00 · {dayLabels}</p>
+                        </div>
+                        <button onClick={() => removeSchedule(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", padding: 4 }}><Delete02Icon size={13} /></button>
+                      </div>
+                    )
+                  })}
+                  {schedules.length === 0 && <p style={{ fontSize: 12.5, color: "#333", marginBottom: 16 }}>No schedules yet.</p>}
+                  <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 10, padding: 16, marginTop: 16 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "#888", marginBottom: 12 }}>Add schedule</p>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                      <input style={{ ...S.input, flex: 1, minWidth: 120 }} value={ocName} onChange={e => setOcName(e.target.value)} placeholder="Name" />
+                      <input style={{ ...S.input, flex: 2, minWidth: 180 }} type="email" value={ocEmail} onChange={e => setOcEmail(e.target.value)} placeholder="Alert email" />
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                      <div style={{ flex: 1, minWidth: 80 }}>
+                        <label style={S.label}>Start hour (24h)</label>
+                        <input type="number" min={0} max={23} style={S.input} value={ocStart} onChange={e => setOcStart(Number(e.target.value))} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 80 }}>
+                        <label style={S.label}>End hour (24h)</label>
+                        <input type="number" min={0} max={23} style={S.input} value={ocEnd} onChange={e => setOcEnd(Number(e.target.value))} />
+                      </div>
+                      <div style={{ flex: 2, minWidth: 140 }}>
+                        <label style={S.label}>Days (0=Sun … 6=Sat, comma-separated)</label>
+                        <input style={S.input} value={ocDays} onChange={e => setOcDays(e.target.value)} placeholder="1,2,3,4,5" />
+                      </div>
+                    </div>
+                    <button onClick={addSchedule} disabled={ocLoading || !ocName || !ocEmail} style={{ ...S.btn, background: "#e8e8e8", color: "#000" }}>
+                      {ocLoading ? "Adding…" : "Add schedule"}
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
 
             {tab === "billing" && (

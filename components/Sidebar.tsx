@@ -1,5 +1,5 @@
 "use client"
-import { AddSquareIcon, ArrowReloadHorizontalIcon, PlugSocketIcon, GridIcon, ChartLineData01Icon, AlertCircleIcon, Settings01Icon, LayerAddIcon, LockPasswordIcon, SourceCodeSquareIcon, Bug01Icon } from "hugeicons-react"
+import { AddSquareIcon, ArrowReloadHorizontalIcon, PlugSocketIcon, GridIcon, ChartLineData01Icon, AlertCircleIcon, Settings01Icon, LayerAddIcon, LockPasswordIcon, SourceCodeSquareIcon, Bug01Icon, BarChartIcon } from "hugeicons-react"
 import { cn } from "@/lib/utils"
 import { VercelSyncedProject, ManualProject, CheckResult } from "@/lib/types"
 
@@ -40,6 +40,7 @@ const VERCEL_SECTIONS = [
       { id: "incidents",    label: "Incidents",    Icon: AlertCircleIcon },
       { id: "insights",     label: "Code Insights", Icon: SourceCodeSquareIcon },
       { id: "debug",        label: "Debug with AI", Icon: Bug01Icon },
+      { id: "sla",          label: "SLA Report",    Icon: BarChartIcon },
     ],
   },
   {
@@ -59,6 +60,7 @@ const MANUAL_SECTIONS = [
       { id: "incidents",   label: "Incidents",   Icon: AlertCircleIcon },
       { id: "insights",    label: "Code Insights", Icon: SourceCodeSquareIcon },
       { id: "debug",       label: "Debug with AI", Icon: Bug01Icon },
+      { id: "sla",         label: "SLA Report",    Icon: BarChartIcon },
     ],
   },
   {
