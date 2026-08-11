@@ -1,7 +1,6 @@
+import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
-import { getToken } from "next-auth/jwt"
 
-// In-memory rate limiter (resets on cold start — fine for edge/serverless)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
 function rateLimit(key: string, limit: number, windowMs: number): boolean {
@@ -27,18 +26,16 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown"
 
-  // Rate limit sensitive auth endpoints
   if (RATE_LIMITED_PATHS.some(p => pathname.startsWith(p))) {
-    const allowed = rateLimit(`${ip}:${pathname}`, 10, 60_000) // 10 req/min
+    const allowed = rateLimit(`${ip}:${pathname}`, 10, 60_000)
     if (!allowed) {
       return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 })
     }
   }
 
-  // Auth guard for dashboard
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/settings") || pathname.startsWith("/admin")) {
-    const token = await getToken({ req, secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET })
-    if (!token) {
+    const session = await auth()
+    if (!session) {
       const loginUrl = new URL("/login", req.url)
       loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
