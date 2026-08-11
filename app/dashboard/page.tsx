@@ -376,10 +376,7 @@ export default function Home() {
             {/* ── Top nav (dashboard only) ── */}
             <nav style={{ height: "52px", borderBottom: "1px solid #181818", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", flexShrink: 0, background: "#090909" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "24px", height: "24px", background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ color: "#fff", fontWeight: 900, fontSize: "8px", letterSpacing: "-0.05em" }}>C</span>
-                </div>
-                <span style={{ color: "#fff", fontSize: "13.5px", fontWeight: 600, letterSpacing: "-0.02em" }}>m-ops</span>
+                <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800, letterSpacing: "-0.05em" }}>m-ops</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 {!vercelConnected && (

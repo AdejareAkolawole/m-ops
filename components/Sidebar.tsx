@@ -110,18 +110,7 @@ export function Sidebar({
         gap: "10px",
         flexShrink: 0,
       }}>
-        <div style={{
-          width: "26px", height: "26px",
-          background: ACCENT,
-          borderRadius: "7px",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <span style={{ color: "#000", fontWeight: 900, fontSize: "9px", letterSpacing: "-0.05em" }}>PH</span>
-        </div>
-        <span style={{ color: "#e8e8e8", fontSize: "14px", fontWeight: 600, letterSpacing: "-0.015em" }}>
-          Project Hub
-        </span>
+        <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800, letterSpacing: "-0.05em" }}>m-ops</span>
       </div>
 
       {/* ── Nav scroll area ── */}
