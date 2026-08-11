@@ -15,5 +15,10 @@ export const authConfig: NextAuthConfig = {
       if (isProtected) return !!auth?.user
       return true
     },
+    async session({ session, token }) {
+      // Pass emailVerified from JWT token to session so middleware can read it
+      if (token?.emailVerified) (session.user as any).emailVerified = token.emailVerified
+      return session
+    },
   },
 }
