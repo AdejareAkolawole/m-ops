@@ -1,16 +1,33 @@
 "use client"
-import { useState } from "react"
-import { useSession } from "next-auth/react"
-import { signOut } from "next-auth/react"
+import { useState, useEffect } from "react"
+import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 export default function VerifyEmailPage() {
-  const { data: session } = useSession()
+  const { data: session, update } = useSession()
+  const router = useRouter()
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
+
+  // On load, refresh the session — if the user already verified via the email link
+  // but their JWT is stale, this picks up the updated emailVerified from the DB
+  useEffect(() => {
+    update().then((refreshed) => {
+      if ((refreshed?.user as any)?.emailVerified) {
+        router.replace("/dashboard")
+      }
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function resend() {
     setStatus("sending")
     try {
       const res = await fetch("/api/auth/resend-verification", { method: "POST" })
+      if (res.status === 400) {
+        // Already verified — force session refresh and go to dashboard
+        await update()
+        router.replace("/dashboard")
+        return
+      }
       setStatus(res.ok ? "sent" : "error")
     } catch {
       setStatus("error")
@@ -78,10 +95,10 @@ export default function VerifyEmailPage() {
           margin: "0 0 24px",
           lineHeight: "1.6",
         }}>
-          Check your inbox and click the link to access your dashboard. The link expires in 24 hours.
+          Click the link in the email to access your dashboard. Check your spam folder if you don&apos;t see it. The link expires in 24 hours.
         </p>
 
-        {status === "sent" ? (
+        {status === "sent" && (
           <div style={{
             background: "#f0fff4",
             border: "1px solid #bbf7d0",
@@ -93,19 +110,7 @@ export default function VerifyEmailPage() {
           }}>
             Email resent — check your inbox.
           </div>
-        ) : status === "error" ? (
-          <div style={{
-            background: "#fff0f0",
-            border: "1px solid #fecaca",
-            borderRadius: "8px",
-            padding: "12px 16px",
-            fontSize: "13px",
-            color: "#dc2626",
-            marginBottom: "24px",
-          }}>
-            Something went wrong — try again in a moment.
-          </div>
-        ) : null}
+        )}
 
         <button
           onClick={resend}
