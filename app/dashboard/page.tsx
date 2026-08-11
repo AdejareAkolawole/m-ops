@@ -35,7 +35,6 @@ function manualMeta(p: ManualProject) {
 import { ConnectVercel } from "@/components/ConnectVercel"
 import { ConnectProvider } from "@/components/ConnectProvider"
 import { LiveBar, pushLiveEvent } from "@/components/LiveBar"
-import { IncidentToasts, ToastEvent } from "@/components/IncidentToast"
 import { VercelProjectCard } from "@/components/VercelProjectCard"
 import { VercelProjectDetail } from "@/components/VercelProjectDetail"
 import { VercelProjectPicker } from "@/components/VercelProjectPicker"
@@ -95,7 +94,6 @@ export default function Home() {
   const uptimeRef = useRef<Record<string, UptimeResult>>({})
   const [connectingProvider, setConnectingProvider] = useState<HostingProvider | null>(null)
   const [signingOut, setSigningOut] = useState(false)
-  const [toasts, setToasts] = useState<ToastEvent[]>([])
   const prevStatusRef = useRef<Record<string, boolean | undefined>>({})
 
   useEffect(() => {
@@ -179,23 +177,10 @@ export default function Home() {
 
         // Status change toasts
         if (prevOk === true && !data.ok) {
-          // Alert: went down
           fetch("/api/alerts/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectName: name, projectUrl: url, status: "down", error: data.error }) }).catch(() => {})
-          setToasts(ts => [...ts, {
-            id: `${id}-${Date.now()}`, type: "down", projectName: name,
-            projectId: id, message: "Service is unreachable", startedAt: Date.now(),
-            onDiagnose: () => {
-              const vp = vercelProjects.find(p => p.id === id)
-              const mp = manualProjects.find(p => p.id === id)
-              if (vp) { setSelected({ type: "vercel", project: vp }); setActiveTab("debug") }
-              else if (mp) { setSelected({ type: "manual", project: mp }); setActiveTab("debug") }
-            },
-          }])
           pushLiveEvent({ type: "down", projectName: name, message: "went UNREACHABLE" })
         } else if (prevOk === false && data.ok) {
-          // Alert: recovered
           fetch("/api/alerts/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectName: name, projectUrl: url, status: "up", responseMs: data.responseMs }) }).catch(() => {})
-          setToasts(ts => [...ts, { id: `${id}-${Date.now()}`, type: "recover", projectName: name, message: "Back online — recovered", startedAt: Date.now() }])
           pushLiveEvent({ type: "recover", projectName: name, message: "recovered ✓", ms: data.responseMs })
         }
 
@@ -517,7 +502,6 @@ export default function Home() {
         )}
       </div>
 
-      <IncidentToasts toasts={toasts} onDismiss={id => setToasts(ts => ts.filter(t => t.id !== id))} />
 
 
 
