@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { Cancel01Icon } from "hugeicons-react"
 import { GitHubAccount } from "@/lib/types"
+import { saveGitHubAccount } from "@/lib/store"
 
 const GitHubMark = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 98 96" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -14,14 +15,28 @@ interface Props {
   onConnected: (account: GitHubAccount) => void
 }
 
-export function ConnectGitHub({ onClose }: Props) {
+export function ConnectGitHub({ onClose, onConnected }: Props) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  function handleLogin() {
+  async function handleConnect() {
     setLoading(true)
-    // Store intent so the app knows to open Code Insights on return
-    localStorage.setItem("gh_oauth_pending", "insights")
-    window.location.href = "/api/github/auth"
+    setError("")
+    try {
+      const res = await fetch("/api/github/auth")
+      const data = await res.json()
+      if (!res.ok || !data.token) {
+        setError(data.error || "Could not get GitHub token. Make sure you signed in with GitHub.")
+        setLoading(false)
+        return
+      }
+      const account: GitHubAccount = { token: data.token, login: data.login, connectedAt: new Date().toISOString() }
+      saveGitHubAccount(account)
+      onConnected(account)
+    } catch {
+      setError("Something went wrong. Please try again.")
+      setLoading(false)
+    }
   }
 
   return (
@@ -45,7 +60,7 @@ export function ConnectGitHub({ onClose }: Props) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <p style={{ color: "#e8e8e8", fontSize: "15px", fontWeight: 600, margin: 0 }}>Authorize Project Hub</p>
+            <p style={{ color: "#e8e8e8", fontSize: "15px", fontWeight: 600, margin: 0 }}>Authorize m-ops</p>
             <p style={{ color: "#505050", fontSize: "13px", lineHeight: 1.6, margin: 0 }}>
               We&apos;ll read your code to detect issues and open PRs with auto-fixes. We never push to main directly.
             </p>
@@ -67,8 +82,14 @@ export function ConnectGitHub({ onClose }: Props) {
             ))}
           </div>
 
+          {error && (
+            <p style={{ color: "#f87171", fontSize: "12.5px", margin: 0, background: "#1a0a0a", border: "1px solid #3a1010", borderRadius: "8px", padding: "10px 14px", width: "100%", textAlign: "left" }}>
+              {error}
+            </p>
+          )}
+
           <button
-            onClick={handleLogin}
+            onClick={handleConnect}
             disabled={loading}
             style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
@@ -79,15 +100,11 @@ export function ConnectGitHub({ onClose }: Props) {
               transition: "all 0.15s",
             }}
           >
-            {loading ? (
-              <span style={{ opacity: 0.5 }}>Redirecting to GitHub...</span>
-            ) : (
-              <><GitHubMark size={15} /> Login with GitHub</>
-            )}
+            {loading ? "Connecting..." : <><GitHubMark size={15} /> Connect GitHub</>}
           </button>
 
           <p style={{ color: "#2a2a2a", fontSize: "11px", margin: 0 }}>
-            Token stored locally only. We never share your code.
+            Uses your existing GitHub sign-in. Token stored locally only.
           </p>
         </div>
       </div>

@@ -36,12 +36,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) token.id = user.id
+      if (account?.provider === "github" && account.access_token) {
+        token.githubToken = account.access_token
+      }
       return token
     },
     async session({ session, token }) {
       if (token?.id) session.user.id = token.id as string
+      if (token?.githubToken) (session as any).githubToken = token.githubToken
       return session
     },
   },

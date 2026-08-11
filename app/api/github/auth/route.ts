@@ -1,20 +1,20 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
+import { auth } from "@/auth"
 
-export async function GET(req: NextRequest) {
-  const clientId = process.env.GITHUB_CLIENT_ID
-  if (!clientId) {
-    return NextResponse.json({ error: "GITHUB_CLIENT_ID not set" }, { status: 500 })
+// Returns the GitHub token from the NextAuth session (stored when user signed in with GitHub).
+// This avoids needing a second OAuth app callback URL.
+export async function GET() {
+  const session = await auth()
+  const githubToken = (session as any)?.githubToken
+
+  if (!githubToken) {
+    return NextResponse.json({ error: "No GitHub token. Sign in with GitHub to use Code Insights." }, { status: 401 })
   }
 
-  const origin = req.nextUrl.origin
-  const callbackUrl = `${origin}/api/github/callback`
-  const state = Math.random().toString(36).slice(2)
+  const userRes = await fetch("https://api.github.com/user", {
+    headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github+json" },
+  })
+  const user = await userRes.json()
 
-  const url = new URL("https://github.com/login/oauth/authorize")
-  url.searchParams.set("client_id", clientId)
-  url.searchParams.set("redirect_uri", callbackUrl)
-  url.searchParams.set("scope", "repo read:user")
-  url.searchParams.set("state", state)
-
-  return NextResponse.redirect(url.toString())
+  return NextResponse.json({ token: githubToken, login: user.login, avatar: user.avatar_url })
 }
