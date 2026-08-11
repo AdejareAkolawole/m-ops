@@ -386,42 +386,43 @@ export default function Home() {
         ) : (
           <>
             {/* ── Top nav (dashboard only) ── */}
-            <nav style={{ height: "52px", borderBottom: "1px solid #181818", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 0 28px", flexShrink: 0, background: "#090909" }}>
+            <nav style={{ height: "52px", borderBottom: "1px solid #181818", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 0 20px", flexShrink: 0, background: "#090909" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800, letterSpacing: "-0.05em" }}>m-ops</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 {!vercelConnected && (
-                  <button onClick={() => setShowConnect(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "7px", fontSize: "12px", fontWeight: 500, background: "#141414", border: "1px solid #1e1e1e", color: "#888", cursor: "pointer" }}>
-                    <PlugSocketIcon size={12} /> Connect Vercel
+                  <button onClick={() => setShowConnect(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 10px", borderRadius: "7px", fontSize: "12px", fontWeight: 500, background: "#141414", border: "1px solid #1e1e1e", color: "#888", cursor: "pointer" }}>
+                    <PlugSocketIcon size={12} /><span className="mob-hide">Connect Vercel</span>
                   </button>
                 )}
                 {session?.user && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "4px", paddingLeft: "14px", borderLeft: "1px solid #1e1e1e" }}>
-                    <a href="/settings" style={{ display: "flex", alignItems: "center", gap: "9px", textDecoration: "none", padding: "6px 10px", borderRadius: "8px", border: "1px solid #1e1e1e", background: "#0f0f0f" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "4px", paddingLeft: "10px", borderLeft: "1px solid #1e1e1e" }}>
+                    <a href="/settings" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", padding: "5px 8px", borderRadius: "8px", border: "1px solid #1e1e1e", background: "#0f0f0f" }}>
                       {session.user.image ? (
-                        <img src={session.user.image} alt="" style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover" }} />
+                        <img src={session.user.image} alt="" style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }} />
                       ) : (
-                        <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "linear-gradient(135deg,#7c3aed,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, color: "#fff" }}>
+                        <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "linear-gradient(135deg,#7c3aed,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 700, color: "#fff" }}>
                           {(session.user.name || session.user.email || "U")[0].toUpperCase()}
                         </div>
                       )}
-                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#bbb", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span className="mob-nav-name" style={{ fontSize: "13px", fontWeight: 500, color: "#bbb", maxWidth: "130px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {session.user.name || session.user.email}
                       </span>
                     </a>
                     {session.user.email === ADMIN_EMAIL && (
-                      <a href="/admin" style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#a78bfa", textDecoration: "none", padding: "6px 12px", borderRadius: "8px", border: "1px solid #2d1f6e", background: "#130e2e" }}>
-                        <Shield01Icon size={13} /> Admin
+                      <a href="/admin" style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#a78bfa", textDecoration: "none", padding: "6px 10px", borderRadius: "8px", border: "1px solid #2d1f6e", background: "#130e2e" }}>
+                        <Shield01Icon size={13} /><span className="mob-nav-admin-text">Admin</span>
                       </a>
                     )}
                     <button
                       onClick={async () => { setSigningOut(true); await signOut({ callbackUrl: "/" }) }}
                       disabled={signingOut}
-                      style={{ fontSize: "13px", fontWeight: 500, color: "#555", background: "#0f0f0f", border: "1px solid #1e1e1e", borderRadius: "8px", cursor: signingOut ? "not-allowed" : "pointer", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px", opacity: signingOut ? 0.5 : 1 }}
+                      style={{ fontSize: "13px", fontWeight: 500, color: "#555", background: "#0f0f0f", border: "1px solid #1e1e1e", borderRadius: "8px", cursor: signingOut ? "not-allowed" : "pointer", padding: "6px 10px", display: "flex", alignItems: "center", gap: "5px", opacity: signingOut ? 0.5 : 1 }}
                     >
                       {signingOut && <Spinner size={12} color="#555" />}
-                      {signingOut ? "Signing out…" : "Sign out"}
+                      <span className="mob-hide">{signingOut ? "Signing out…" : "Sign out"}</span>
+                      {!signingOut && <span style={{ fontSize: "13px", color: "#444" }}>↪</span>}
                     </button>
                   </div>
                 )}
@@ -431,7 +432,7 @@ export default function Home() {
             {/* ── Dashboard content ── */}
             <div className="flex-1 overflow-y-auto">
               {totalProjects === 0 && !vercelConnected ? (
-                <div style={{ padding: "80px 28px", textAlign: "center" }}>
+                <div style={{ padding: "60px 20px", textAlign: "center" }}>
                   <EmptyState
                     onAddProject={() => setShowAddProject(true)}
                     onConnectVercel={() => setShowConnect(true)}
@@ -441,7 +442,7 @@ export default function Home() {
                 <>
                   {/* ── Plan banner ── */}
                   {planCfg && (
-                    <div style={{ margin: "14px 28px 0", padding: "12px 16px", background: "#0d0d0d", border: "1px solid #1c1c1c", borderRadius: 12, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                    <div className="plan-banner" style={{ margin: "14px 16px 0", padding: "12px 16px", background: "#0d0d0d", border: "1px solid #1c1c1c", borderRadius: 12, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{
                           fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
@@ -452,26 +453,26 @@ export default function Home() {
                         }}>{userPlan}</span>
                         <span style={{ fontSize: 12, color: "#444" }}>plan</span>
                       </div>
-                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div className="plan-banner-divider" style={{ width: 1, height: 16, background: "#1e1e1e" }} />
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 12, color: "#555" }}>Projects</span>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>
                           {manualProjects.length} / {planCfg.maxProjects === Infinity ? "∞" : planCfg.maxProjects}
                         </span>
                       </div>
-                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div className="plan-banner-divider" style={{ width: 1, height: 16, background: "#1e1e1e" }} />
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 12, color: "#555" }}>Checks every</span>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>
                           {planCfg.checkIntervalSec >= 60 ? `${planCfg.checkIntervalSec / 60}m` : `${planCfg.checkIntervalSec}s`}
                         </span>
                       </div>
-                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div className="plan-banner-divider" style={{ width: 1, height: 16, background: "#1e1e1e" }} />
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 12, color: "#555" }}>History</span>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>{planCfg.historyDays}d</span>
                       </div>
-                      <div style={{ width: 1, height: 16, background: "#1e1e1e" }} />
+                      <div className="plan-banner-divider" style={{ width: 1, height: 16, background: "#1e1e1e" }} />
                       <div style={{ display: "flex", gap: 6 }}>
                         {planCfg.ai && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#0d1a0d", color: "#4ade80", border: "1px solid #1a3a1a" }}>AI</span>}
                         {planCfg.slackAlerts && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#0d1220", color: "#818cf8", border: "1px solid #1a2040" }}>Slack</span>}
@@ -485,7 +486,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "12px 28px 0", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "12px 16px 0", gap: "8px" }}>
                     <HelpButton onAddProject={() => setShowAddProject(true)} plan={userPlan} inline />
                     <button onClick={() => setShowAddProject(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, background: "#181818", color: "#e8e8e8", cursor: "pointer", border: "1px solid #242424" }}>
                       <AddSquareIcon size={13} /> Add Project

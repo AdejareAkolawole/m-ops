@@ -113,7 +113,7 @@ export function MonitoringDashboard({ vercelProjects, manualProjects, allChecks,
   if (allProjects.length === 0) return null
 
   return (
-    <div className="animate-fade-in-up" style={{ padding: "40px 40px", maxWidth: "1000px" }}>
+    <div className="animate-fade-in-up monitor-pad" style={{ padding: "32px 28px", maxWidth: "1000px" }}>
       {/* ── Header ── */}
       <div style={{ marginBottom: "32px" }}>
         <p style={{ color: ACCENT, fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px" }}>
@@ -128,7 +128,7 @@ export function MonitoringDashboard({ vercelProjects, manualProjects, allChecks,
       </div>
 
       {/* ── Stat row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: "#141414", border: "1px solid #1e1e1e", borderRadius: "12px", overflow: "hidden", marginBottom: "28px" }}>
+      <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: "#141414", border: "1px solid #1e1e1e", borderRadius: "12px", overflow: "hidden", marginBottom: "28px" }}>
         {[
           {
             label: "Active projects",
@@ -149,9 +149,9 @@ export function MonitoringDashboard({ vercelProjects, manualProjects, allChecks,
             valueColor: avgUptime != null && avgUptime >= 99 ? C_OK : avgUptime != null && avgUptime >= 95 ? C_WARN : C_CRIT,
           },
         ].map((s, i) => (
-          <div key={i} style={{ padding: "26px 30px", borderRight: i < 2 ? "1px solid #1e1e1e" : "none" }}>
-            <p style={{ color: "#484848", fontSize: "12px", marginBottom: "12px" }}>{s.label}</p>
-            <p className="animate-count-in" style={{ color: s.valueColor, fontSize: "36px", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
+          <div key={i} style={{ padding: "20px 22px", borderRight: i < 2 ? "1px solid #1e1e1e" : "none", borderBottom: "1px solid transparent" }}>
+            <p style={{ color: "#484848", fontSize: "12px", marginBottom: "10px" }}>{s.label}</p>
+            <p className="animate-count-in" style={{ color: s.valueColor, fontSize: "32px", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
             <p style={{ color: "#303030", fontSize: "12px", marginTop: "8px" }}>{s.sub}</p>
           </div>
         ))}

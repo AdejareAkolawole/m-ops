@@ -87,7 +87,7 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #2e2e2e; }
 
 /* Mobile responsive */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   /* Settings layout: stack sidebar above content */
   .settings-layout { flex-direction: column !important; }
   .settings-sidebar { width: 100% !important; display: flex !important; flex-wrap: wrap !important; gap: 4px !important; }
@@ -100,6 +100,32 @@ body {
   /* Landing page nav */
   .landing-nav-links { display: none !important; }
 
+  /* Dashboard nav */
+  .mob-hide { display: none !important; }
+  .mob-hamburger { display: flex !important; align-items: center; }
+  .mob-nav-name { display: none !important; }
+  .mob-nav-admin-text { display: none !important; }
+
+  /* Dashboard stats grid: 3-col → 1-col */
+  .stats-grid { grid-template-columns: 1fr !important; }
+  .stats-grid > div { border-right: none !important; border-bottom: 1px solid #1e1e1e !important; }
+  .stats-grid > div:last-child { border-bottom: none !important; }
+
+  /* Dashboard plan banner: stack vertically */
+  .plan-banner { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+  .plan-banner-divider { display: none !important; }
+
+  /* Dashboard project list padding */
+  .dash-content { padding: 16px !important; }
+  .dash-content-pad { padding-left: 16px !important; padding-right: 16px !important; }
+
+  /* MonitoringDashboard padding */
+  .monitor-pad { padding: 20px 16px !important; }
+
   /* General padding reduction */
-  .mobile-px { padding-left: 20px !important; padding-right: 20px !important; }
+  .mobile-px { padding-left: 16px !important; padding-right: 16px !important; }
+
+  /* Sidebar drawer */
+  .mob-close-btn { display: block !important; }
+  .mob-backdrop { display: block !important; }
 }
