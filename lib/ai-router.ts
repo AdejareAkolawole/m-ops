@@ -89,8 +89,8 @@ async function tryOpenRouter(messages: Message[], systemPrompt: string): Promise
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
-      "HTTP-Referer": "https://projecthub.dev",
-      "X-Title": "Project Hub",
+      "HTTP-Referer": "https://m-ops.pro",
+      "X-Title": "m-ops",
     },
     body: JSON.stringify({
       model: "meta-llama/llama-3.1-8b-instruct:free",
