@@ -201,20 +201,20 @@ export function HelpButton({ onAddProject, plan, inline }: Props) {
       <button
         onClick={() => { setOpen(o => !o); setView("menu") }}
         style={{
-          width: 44, height: 44, borderRadius: "50%",
-          background: open ? "#1a0f2e" : "#0f0f0f",
+          height: 32, padding: "0 12px", borderRadius: 8,
+          background: open ? "#1a0f2e" : "#141414",
           border: `1px solid ${open ? "#3d2a6e" : "#1e1e1e"}`,
           cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", gap: 6,
           transition: "all 0.15s ease",
         }}
         title="Help & options (press ?)"
       >
         {open
-          ? <Cancel01Icon size={18} color="#a78bfa" />
-          : <QuestionIcon size={18} color="#666" />
+          ? <Cancel01Icon size={13} color="#a78bfa" />
+          : <QuestionIcon size={13} color="#666" />
         }
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: open ? "#a78bfa" : "#666" }}>Help</span>
       </button>
     </div>
   )
