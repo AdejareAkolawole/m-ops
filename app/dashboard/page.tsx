@@ -486,6 +486,7 @@ export default function Home() {
                   )}
 
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "12px 28px 0", gap: "8px" }}>
+                    <HelpButton onAddProject={() => setShowAddProject(true)} plan={userPlan} inline />
                     <button onClick={() => setShowAddProject(true)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, background: "#181818", color: "#e8e8e8", cursor: "pointer", border: "1px solid #242424" }}>
                       <AddSquareIcon size={13} /> Add Project
                     </button>
@@ -571,10 +572,6 @@ export default function Home() {
       <Onboarding
         onAddProject={() => setShowAddProject(true)}
         onGoToAlerts={() => { window.location.href = "/settings?tab=alerts" }}
-      />
-      <HelpButton
-        onAddProject={() => setShowAddProject(true)}
-        plan={userPlan}
       />
       {connectingProvider && (
         <ConnectProvider

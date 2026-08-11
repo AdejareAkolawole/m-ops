@@ -274,8 +274,6 @@ export default function SettingsPage() {
     if (!callTopic) return
     setCallLoading(true)
     try {
-      // Open Google Meet immediately
-      const meetWindow = window.open("https://meet.google.com/new", "_blank", "width=900,height=700")
       const preferredAt = callDate ? new Date(`${callDate}T${callTime}`).toISOString() : new Date().toISOString()
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
       const res = await fetch("/api/support/book", {
@@ -284,10 +282,21 @@ export default function SettingsPage() {
         body: JSON.stringify({ topic: callTopic, description: callDesc, preferredAt, timezone }),
       })
       const d = await res.json()
-      if (!res.ok) { meetWindow?.close(); return showToast("error", d.message || d.error || "Failed") }
+      if (!res.ok) return showToast("error", d.message || d.error || "Failed")
       setSupportCalls(prev => [...prev, d])
+
+      // Open Google Calendar to schedule with both parties + Meet
+      const start = callDate ? `${callDate.replace(/-/g, "")}T${callTime.replace(":", "")}00` : ""
+      const title = encodeURIComponent(`m-ops Support Call: ${callTopic}`)
+      const details = encodeURIComponent(`Support call with m-ops.\n\n${callDesc || ""}`)
+      const guests = encodeURIComponent("adejare.akolawole@gmail.com")
+      const calUrl = start
+        ? `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&add=${guests}&dates=${start}/${start}&crm=BUSY`
+        : `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&add=${guests}&crm=BUSY`
+      window.open(calUrl, "_blank")
+
       setCallTopic(""); setCallDesc(""); setCallDate(""); setCallTime("10:00")
-      showToast("success", "Google Meet opened! Share the link with support.")
+      showToast("success", "Google Calendar opened — confirm the time and Google Meet is auto-added.")
     } finally { setCallLoading(false) }
   }
 
@@ -747,8 +756,8 @@ export default function SettingsPage() {
                     disabled={callLoading || !callTopic}
                     style={{ ...S.btn, background: callTopic ? "#1a73e8" : "#1a1a1a", color: callTopic ? "#fff" : "#444", border: "none", display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 10, cursor: callTopic ? "pointer" : "not-allowed" }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z" fill="currentColor"/></svg>
-                    {callLoading ? "Opening Meet…" : "Start Google Meet"}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 4H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm-9 11H7V9h3v6zm5 0h-3V9h3v6z" fill="currentColor"/></svg>
+                    {callLoading ? "Opening Calendar…" : "Schedule on Google Calendar"}
                   </button>
                   <p style={{ fontSize: 11.5, color: "#444", marginTop: 10 }}>Opens Google Meet instantly — share the link with us in the chat below.</p>
                 </div>

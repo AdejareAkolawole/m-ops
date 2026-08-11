@@ -25,11 +25,15 @@ const SHORTCUTS = [
 interface Props {
   onAddProject?: () => void
   plan?: string
+  inline?: boolean
 }
 
-export function HelpButton({ onAddProject, plan }: Props) {
+export function HelpButton({ onAddProject, plan, inline }: Props) {
   const [open, setOpen] = useState(false)
-  const [view, setView] = useState<"menu" | "shortcuts">("menu")
+  const [view, setView] = useState<"menu" | "shortcuts" | "feature">("menu")
+  const [featureTitle, setFeatureTitle] = useState("")
+  const [featureDesc, setFeatureDesc] = useState("")
+  const [featureSent, setFeatureSent] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -56,63 +60,72 @@ export function HelpButton({ onAddProject, plan }: Props) {
       Icon: Mortarboard01Icon,
       label: "Restart tour",
       desc: "Walk through onboarding again",
+      color: "#a78bfa", bg: "#1a0f2e", border: "#2d1a5e",
       onClick: () => { resetOnboarding(); window.location.reload() },
     },
     {
       Icon: KeyboardIcon,
       label: "Keyboard shortcuts",
       desc: "Speed up your workflow",
+      color: "#60a5fa", bg: "#0a1220", border: "#1a2a40",
       onClick: () => setView("shortcuts"),
     },
     {
       Icon: BookOpen01Icon,
       label: "Documentation",
       desc: "Guides and API reference",
-      onClick: () => window.open("https://m-ops.pro/docs", "_blank"),
+      color: "#4ade80", bg: "#0a1a0e", border: "#1a3a20",
+      onClick: () => { window.location.href = "/docs"; setOpen(false) },
     },
     {
       Icon: Bug01Icon,
       label: "Report a bug",
       desc: "Something broken? Let us know",
+      color: "#f87171", bg: "#1a0a0a", border: "#3a1a1a",
       onClick: () => window.open("mailto:adejare.akolawole@gmail.com?subject=m-ops bug report", "_blank"),
     },
     {
       Icon: Idea01Icon,
       label: "Request a feature",
       desc: "Suggest something new",
-      onClick: () => window.open("mailto:adejare.akolawole@gmail.com?subject=m-ops feature request", "_blank"),
+      color: "#fbbf24", bg: "#1a1200", border: "#3a2a00",
+      onClick: () => { setView("feature"); setFeatureSent(false) },
     },
     {
       Icon: Activity01Icon,
       label: "System status",
       desc: "Check platform health",
-      onClick: () => window.open("https://status.m-ops.pro", "_blank"),
+      color: "#34d399", bg: "#051a10", border: "#0a3020",
+      onClick: () => { window.location.href = "/status"; setOpen(false) },
     },
     ...(plan === "team" ? [{
       Icon: CallIcon,
       label: "Book a support call",
       desc: "Talk to us on Google Meet",
+      color: "#818cf8", bg: "#0f1020", border: "#1e2040",
       onClick: () => { window.location.href = "/settings?tab=support"; setOpen(false) },
     }] : [{
       Icon: Mail01Icon,
       label: "Contact support",
       desc: "Email the team",
+      color: "#818cf8", bg: "#0f1020", border: "#1e2040",
       onClick: () => window.open("mailto:adejare.akolawole@gmail.com?subject=m-ops support", "_blank"),
     }]),
     {
       Icon: CrownIcon,
       label: "Upgrade plan",
       desc: "Unlock Pro & Team features",
+      color: "#f59e0b", bg: "#1a1000", border: "#3a2500",
       onClick: () => { window.location.href = "/settings?tab=billing"; setOpen(false) },
       highlight: plan === "free",
     },
   ]
 
   return (
-    <div ref={ref} style={{ position: "fixed", bottom: 24, right: 24, zIndex: 1500 }}>
+    <div ref={ref} style={inline ? { position: "relative", display: "inline-flex" } : { position: "fixed", bottom: 24, right: 24, zIndex: 1500 }}>
       {open && (
         <div style={{
-          position: "absolute", bottom: 56, right: 0,
+          position: "absolute", bottom: inline ? undefined : 56, top: inline ? 46 : undefined, right: 0,
           background: "#0f0f0f", border: "1px solid #1e1e1e", borderRadius: 18,
           width: 300, boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
           overflow: "hidden",
@@ -132,24 +145,24 @@ export function HelpButton({ onAddProject, plan }: Props) {
                   return (
                     <button key={i} onClick={item.onClick} style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 12,
-                      padding: "9px 14px", background: item.highlight ? "#1a0f2e" : "transparent",
+                      padding: "9px 14px", background: "transparent",
                       border: "none", cursor: "pointer", textAlign: "left",
                       transition: "background 0.1s",
                     }}
-                      onMouseEnter={e => { if (!item.highlight) (e.currentTarget as HTMLElement).style.background = "#141414" }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = item.highlight ? "#1a0f2e" : "transparent" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#141414" }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}
                     >
                       <div style={{
-                        width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                        background: item.highlight ? "#2d1a5e" : "#161616",
-                        border: `1px solid ${item.highlight ? "#3d2a6e" : "#222"}`,
+                        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                        background: item.bg,
+                        border: `1px solid ${item.border}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
-                        <ItemIcon size={14} color={item.highlight ? "#a78bfa" : "#555"} />
+                        <ItemIcon size={15} color={item.color} />
                       </div>
                       <div>
-                        <p style={{ fontSize: 12.5, fontWeight: 600, color: item.highlight ? "#c4b5fd" : "#d4d4d4", margin: 0 }}>{item.label}</p>
-                        <p style={{ fontSize: 11, color: item.highlight ? "#7c3aed" : "#333", margin: 0 }}>{item.desc}</p>
+                        <p style={{ fontSize: 12.5, fontWeight: 600, color: "#d4d4d4", margin: 0 }}>{item.label}</p>
+                        <p style={{ fontSize: 11, color: "#333", margin: 0 }}>{item.desc}</p>
                       </div>
                     </button>
                   )
@@ -179,6 +192,60 @@ export function HelpButton({ onAddProject, plan }: Props) {
                     </div>
                   </div>
                 ))}
+              </div>
+            </>
+          )}
+
+          {view === "feature" && (
+            <>
+              <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", gap: 8 }}>
+                <button onClick={() => setView("menu")} style={{ background: "none", border: "none", cursor: "pointer", color: "#444", padding: 0, fontSize: 16, lineHeight: 1 }}>←</button>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#e8e8e8", margin: 0 }}>Request a feature</p>
+              </div>
+              <div style={{ padding: "16px 14px" }}>
+                {featureSent ? (
+                  <div style={{ textAlign: "center", padding: "12px 0" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "#051a10", border: "1px solid #0a3020", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                      <Idea01Icon size={22} color="#4ade80" />
+                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "#d4d4d4", margin: "0 0 4px" }}>Request sent!</p>
+                    <p style={{ fontSize: 12, color: "#444", margin: "0 0 14px" }}>Thanks — we'll review it soon.</p>
+                    <button onClick={() => { setView("menu"); setFeatureTitle(""); setFeatureDesc("") }} style={{ fontSize: 12, color: "#666", background: "none", border: "none", cursor: "pointer" }}>Close</button>
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 12, color: "#444", margin: "0 0 12px" }}>What would make m-ops better for you?</p>
+                    <input
+                      value={featureTitle}
+                      onChange={e => setFeatureTitle(e.target.value)}
+                      placeholder="Feature title"
+                      style={{ width: "100%", background: "#141414", border: "1px solid #1e1e1e", borderRadius: 8, padding: "8px 10px", color: "#d4d4d4", fontSize: 12.5, outline: "none", boxSizing: "border-box", marginBottom: 8 }}
+                    />
+                    <textarea
+                      value={featureDesc}
+                      onChange={e => setFeatureDesc(e.target.value)}
+                      placeholder="Describe what you'd like and why it matters…"
+                      rows={4}
+                      style={{ width: "100%", background: "#141414", border: "1px solid #1e1e1e", borderRadius: 8, padding: "8px 10px", color: "#d4d4d4", fontSize: 12.5, outline: "none", resize: "none", boxSizing: "border-box", marginBottom: 12, lineHeight: 1.6 }}
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!featureTitle.trim()) return
+                        try {
+                          await fetch("/api/feedback", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ type: "feature", title: featureTitle, description: featureDesc }),
+                          })
+                        } catch {}
+                        setFeatureSent(true)
+                      }}
+                      style={{ width: "100%", padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 700, background: featureTitle.trim() ? "#1a1200" : "#111", color: featureTitle.trim() ? "#fbbf24" : "#2a2a2a", border: `1px solid ${featureTitle.trim() ? "#3a2a00" : "#1a1a1a"}`, cursor: featureTitle.trim() ? "pointer" : "not-allowed" }}
+                    >
+                      Submit request
+                    </button>
+                  </>
+                )}
               </div>
             </>
           )}
