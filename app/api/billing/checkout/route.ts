@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
 
-  const origin = process.env.NEXTAUTH_URL || "http://localhost:3005"
+  const origin = process.env.NEXTAUTH_URL?.startsWith("http://localhost") ? "https://m-ops.pro" : (process.env.NEXTAUTH_URL || "https://m-ops.pro")
 
   const res = await fetch("https://api.bachs.io/v1/checkout-sessions", {
     method: "POST",
