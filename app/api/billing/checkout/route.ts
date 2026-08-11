@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const origin = process.env.NEXTAUTH_URL || "http://localhost:3005"
 
-  const res = await fetch("https://sandbox-api.bachs.io/v1/checkout-sessions", {
+  const res = await fetch("https://api.bachs.io/v1/checkout-sessions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({

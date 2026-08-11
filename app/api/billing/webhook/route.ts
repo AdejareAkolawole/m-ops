@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     // Fetch the checkout to get metadata
     const apiKey = process.env.BACHS_SECRET_KEY
     if (apiKey) {
-      const res = await fetch(`https://sandbox-api.bachs.io/v1/checkout-sessions/${checkout_id}`, {
+      const res = await fetch(`https://api.bachs.io/v1/checkout-sessions/${checkout_id}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       })
       if (res.ok) {
