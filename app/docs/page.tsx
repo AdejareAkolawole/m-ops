@@ -10,9 +10,9 @@ import {
   AiBrain01Icon,
   Link01Icon,
   KeyboardIcon,
-  Code01Icon,
+  CodeIcon,
   ArrowRight01Icon,
-  SearchIcon,
+  Search02Icon as SearchIcon,
 } from "hugeicons-react"
 
 const SECTIONS = [
@@ -58,7 +58,7 @@ Pro and Team plans also support **PagerDuty** for on-call escalation.`,
         title: "Manual projects",
         body: `Any HTTP/HTTPS URL can be a manual project. m-ops checks the URL at your plan's interval (5min free, 30sec pro) and records the status code, response time, and DNS/SSL health.
 
-**Health endpoint** — if your app exposes `/api/health`, set it in the project settings to get structured health data instead of a raw status code.`,
+**Health endpoint** — if your app exposes \`/api/health\`, set it in the project settings to get structured health data instead of a raw status code.`,
       },
       {
         title: "Vercel projects",
@@ -181,7 +181,7 @@ A check is counted as **down** if the status code is 4xx, 5xx, or if the request
   },
   {
     id: "api",
-    icon: Code01Icon,
+    icon: CodeIcon,
     color: "#fbbf24",
     bg: "#1a1200",
     border: "#3a2a00",
@@ -254,7 +254,7 @@ export default function DocsPage() {
         <div style={{ width: 220, flexShrink: 0, paddingTop: 32, paddingRight: 24 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: "#2a2a2a", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Contents</p>
           {(search ? filtered : SECTIONS).map(s => {
-            const SIcon = s.Icon
+            const SIcon = s.icon
             const isActive = s.id === active && !search
             return (
               <button key={s.id} onClick={() => { setActive(s.id); setSearch("") }} style={{
@@ -279,7 +279,7 @@ export default function DocsPage() {
             filtered.length === 0 ? (
               <p style={{ color: "#444", fontSize: 14 }}>No results for "{search}"</p>
             ) : filtered.map(section => {
-              const SIcon = section.Icon
+              const SIcon = section.icon
               return (
                 <div key={section.id} style={{ marginBottom: 40 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
@@ -297,11 +297,13 @@ export default function DocsPage() {
                 </div>
               )
             })
-          ) : (
+          ) : (() => {
+            const ActiveIcon = activeSection.icon
+            return (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: activeSection.bg, border: `1px solid ${activeSection.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <activeSection.Icon size={20} color={activeSection.color} />
+                  <ActiveIcon size={20} color={activeSection.color} />
                 </div>
                 <div>
                   <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.04em", margin: 0 }}>{activeSection.title}</h1>
@@ -318,7 +320,7 @@ export default function DocsPage() {
               {/* Next section */}
               {SECTIONS.indexOf(activeSection) < SECTIONS.length - 1 && (() => {
                 const next = SECTIONS[SECTIONS.indexOf(activeSection) + 1]
-                const NIcon = next.Icon
+                const NIcon = next.icon
                 return (
                   <button onClick={() => setActive(next.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 12, background: "#111", border: "1px solid #1a1a1a", cursor: "pointer", width: "100%", textAlign: "left", marginTop: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 9, background: next.bg, border: `1px solid ${next.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -333,7 +335,8 @@ export default function DocsPage() {
                 )
               })()}
             </>
-          )}
+            )
+          })()}
         </div>
       </div>
     </div>
