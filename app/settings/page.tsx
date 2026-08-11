@@ -26,6 +26,8 @@ const S = {
   layout: { display: "flex", gap: "32px", alignItems: "flex-start" } as React.CSSProperties,
   sidebar: { width: "160px", flexShrink: 0 } as React.CSSProperties,
   content: { flex: 1, minWidth: 0 } as React.CSSProperties,
+  // mobile overrides handled via <style> tag
+
   card: { background: "#111", border: "1px solid #1c1c1c", borderRadius: "12px", padding: "24px", marginBottom: "16px" } as React.CSSProperties,
   cardTitle: { fontSize: "13px", fontWeight: 600, color: "#e8e8e8", marginBottom: "4px" } as React.CSSProperties,
   cardDesc: { fontSize: "12px", color: "#444", marginBottom: "20px" } as React.CSSProperties,
@@ -217,13 +219,22 @@ export default function SettingsPage() {
         </div>
       </nav>
 
-      <div style={S.container}>
+      <style>{`
+        @media (max-width: 640px) {
+          .settings-layout { flex-direction: column !important; }
+          .settings-sidebar { width: 100% !important; display: flex !important; flex-direction: row !important; overflow-x: auto !important; gap: 4px !important; padding-bottom: 8px; border-bottom: 1px solid #1c1c1c; margin-bottom: 8px; }
+          .settings-sidebar button { flex-shrink: 0 !important; margin-bottom: 0 !important; }
+          .settings-container { padding: 24px 16px !important; }
+          .settings-card { padding: 16px !important; }
+        }
+      `}</style>
+      <div style={S.container} className="settings-container">
         <h1 style={S.heading}>Settings</h1>
         <p style={S.subheading}>Manage your account preferences and security.</p>
 
-        <div style={S.layout}>
+        <div style={S.layout} className="settings-layout">
           {/* Sidebar tabs */}
-          <div style={S.sidebar}>
+          <div style={S.sidebar} className="settings-sidebar">
             <TabButton active={tab === "profile"} onClick={() => setTab("profile")} icon={<UserIcon size={14} />} label="Profile" />
             <TabButton active={tab === "security"} onClick={() => setTab("security")} icon={<LockPasswordIcon size={14} />} label="Security" />
             <TabButton active={tab === "notifications"} onClick={() => setTab("notifications")} icon={<Notification01Icon size={14} />} label="Notifications" />
@@ -235,7 +246,7 @@ export default function SettingsPage() {
             {tab === "profile" && (
               <>
                 {/* Avatar */}
-                <div style={S.card}>
+                <div style={S.card} className="settings-card">
                   <p style={S.cardTitle}>Profile picture</p>
                   <p style={S.cardDesc}>Your avatar is shown across m-ops.</p>
                   <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -256,7 +267,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Name & Email */}
-                <div style={S.card}>
+                <div style={S.card} className="settings-card">
                   <p style={S.cardTitle}>Personal information</p>
                   <p style={S.cardDesc}>Update your display name and email address.</p>
                   <form onSubmit={saveProfile}>
@@ -285,7 +296,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Connected accounts */}
-                <div style={S.card}>
+                <div style={S.card} className="settings-card">
                   <p style={S.cardTitle}>Connected accounts</p>
                   <p style={S.cardDesc}>Third-party sign-in methods linked to your account.</p>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#0f0f0f", borderRadius: "8px", border: "1px solid #1e1e1e" }}>
@@ -306,7 +317,7 @@ export default function SettingsPage() {
             {tab === "security" && (
               <>
                 {/* Change password */}
-                <div style={S.card}>
+                <div style={S.card} className="settings-card">
                   <p style={S.cardTitle}>Change password</p>
                   <p style={S.cardDesc}>Choose a strong password of at least 8 characters.</p>
                   <form onSubmit={changePassword}>
@@ -344,7 +355,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Sessions */}
-                <div style={S.card}>
+                <div style={S.card} className="settings-card">
                   <p style={S.cardTitle}>Active session</p>
                   <p style={S.cardDesc}>You are currently signed in on this device.</p>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -388,7 +399,7 @@ export default function SettingsPage() {
             )}
 
             {tab === "notifications" && (
-              <div style={S.card}>
+              <div style={S.card} className="settings-card">
                 <p style={S.cardTitle}>Notification preferences</p>
                 <p style={S.cardDesc}>Choose what you get notified about. Email delivery requires a configured Resend API key.</p>
                 {[
@@ -427,7 +438,7 @@ export default function SettingsPage() {
 
             {tab === "billing" && (
               <>
-                <div style={S.card}>
+                <div style={S.card} className="settings-card">
                   <p style={S.cardTitle}>Current plan</p>
                   <p style={S.cardDesc}>Your active subscription tier.</p>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -477,7 +488,7 @@ export default function SettingsPage() {
                 )}
 
                 {plan !== "free" && (
-                  <div style={S.card}>
+                  <div style={S.card} className="settings-card">
                     <p style={S.cardTitle}>Manage subscription</p>
                     <p style={S.cardDesc}>To cancel or change your plan, contact support at hello@bachs.io or reach out via your Bachs dashboard.</p>
                   </div>

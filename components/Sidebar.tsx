@@ -23,6 +23,8 @@ interface SidebarProps {
   onManageVercel: () => void
   uptime: Record<string, { ok: boolean } | undefined>
   history: Record<string, CheckResult[]>
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 const ACCENT = "#60a5fa"
@@ -74,6 +76,7 @@ export function Sidebar({
   activeTab, onTabChange,
   vercelConnected, syncing, onSync, onConnectVercel, onDisconnectVercel,
   onAddProject, uptime, history,
+  mobileOpen = false, onMobileClose,
 }: SidebarProps) {
   const sections = selected?.type === "vercel" ? VERCEL_SECTIONS
     : selected?.type === "manual" ? MANUAL_SECTIONS : null
@@ -89,7 +92,23 @@ export function Sidebar({
   }
 
   return (
-    <aside style={{
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          onClick={onMobileClose}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 39, display: "none" }}
+          className="mob-backdrop"
+        />
+      )}
+      <style>{`
+        @media (max-width: 768px) {
+          .sidebar-aside { position: fixed !important; left: -228px; top: 0; z-index: 40; transition: left 0.25s cubic-bezier(.22,.68,0,1.2) !important; }
+          .sidebar-aside.open { left: 0 !important; }
+          .mob-backdrop { display: block !important; }
+        }
+      `}</style>
+    <aside className={`sidebar-aside${mobileOpen ? " open" : ""}`} style={{
       width: "228px",
       background: "#080808",
       borderRight: "1px solid #161616",
@@ -111,6 +130,11 @@ export function Sidebar({
         flexShrink: 0,
       }}>
         <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800, letterSpacing: "-0.05em" }}>m-ops</span>
+        {onMobileClose && (
+          <button onClick={onMobileClose} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#444", padding: "4px", display: "none" }} className="mob-close-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        )}
       </div>
 
       {/* ── Nav scroll area ── */}
@@ -404,5 +428,7 @@ export function Sidebar({
         )}
       </div>
     </aside>
+    <style>{`@media (max-width: 768px) { .mob-close-btn { display: flex !important; } }`}</style>
+    </>
   )
 }

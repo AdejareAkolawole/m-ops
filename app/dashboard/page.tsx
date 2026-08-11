@@ -87,6 +87,7 @@ export default function Home() {
   const [syncing, setSyncing] = useState(false)
   const [refreshingId, setRefreshingId] = useState<string | null>(null)
   const [vercelConnected, setVercelConnected] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
   const [allVercelProjects, setAllVercelProjects] = useState<VercelSyncedProject[]>([])
   const [selectedVercelIds, setSelectedVercelIds] = useState<string[]>([])
@@ -320,9 +321,9 @@ export default function Home() {
           vercelProjects={vercelProjects}
           manualProjects={manualProjects}
           selected={selected}
-          onSelect={(s) => { setSelected(s); setActiveTab("overview") }}
+          onSelect={(s) => { setSelected(s); setActiveTab("overview"); setMobileSidebarOpen(false) }}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={(t) => { setActiveTab(t); setMobileSidebarOpen(false) }}
           vercelConnected={vercelConnected}
           syncing={syncing}
           onSync={syncVercel}
@@ -332,13 +333,24 @@ export default function Home() {
           onManageVercel={() => setShowManagePicker(true)}
           uptime={uptime}
           history={getAllChecks()}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto flex flex-col" style={{ minWidth: 0 }}>
         {selected ? (
-          <div className="h-full">
+          <div className="h-full" style={{ position: "relative" }}>
+            {/* Mobile hamburger — only shows on small screens */}
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              style={{ position: "absolute", top: "10px", left: "12px", zIndex: 30, background: "#141414", border: "1px solid #222", borderRadius: "8px", padding: "6px 8px", cursor: "pointer", color: "#888", display: "none" }}
+              className="mob-hamburger"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <style>{`@media (max-width: 768px) { .mob-hamburger { display: flex !important; align-items: center; } }`}</style>
             {selected.type === "vercel" ? (
               <VercelProjectDetail
                 project={selected.project}
@@ -374,7 +386,7 @@ export default function Home() {
         ) : (
           <>
             {/* ── Top nav (dashboard only) ── */}
-            <nav style={{ height: "52px", borderBottom: "1px solid #181818", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", flexShrink: 0, background: "#090909" }}>
+            <nav style={{ height: "52px", borderBottom: "1px solid #181818", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 0 28px", flexShrink: 0, background: "#090909" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800, letterSpacing: "-0.05em" }}>m-ops</span>
               </div>
