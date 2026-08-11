@@ -1,20 +1,16 @@
 import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
 import Credentials from "next-auth/providers/credentials"
-import { DebugAdapter } from "@/lib/debug-adapter"
+import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { authConfig } from "@/auth.config"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DebugAdapter,
+  ...authConfig,
+  adapter: PrismaAdapter(prisma),
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-  session: { strategy: "jwt" },
   trustHost: true,
-  debug: true,
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
   providers: [
     GitHub({
       clientId: process.env.GITHUB_CLIENT_ID!,

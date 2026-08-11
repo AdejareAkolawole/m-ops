@@ -1,5 +1,8 @@
-import { auth } from "@/auth"
+import NextAuth from "next-auth"
+import { authConfig } from "@/auth.config"
 import { NextRequest, NextResponse } from "next/server"
+
+const { auth } = NextAuth(authConfig)
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
@@ -22,7 +25,7 @@ const RATE_LIMITED_PATHS = [
   "/api/auth/reset-password",
 ]
 
-export async function middleware(req: NextRequest) {
+export default auth(async function middleware(req: NextRequest & { auth: any }) {
   const { pathname } = req.nextUrl
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown"
 
@@ -33,17 +36,19 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/settings") || pathname.startsWith("/admin")) {
-    const session = await auth()
-    if (!session) {
-      const loginUrl = new URL("/login", req.url)
-      loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname)
-      return NextResponse.redirect(loginUrl)
-    }
+  if (
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/settings") ||
+      pathname.startsWith("/admin")) &&
+    !req.auth
+  ) {
+    const loginUrl = new URL("/login", req.url)
+    loginUrl.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   return NextResponse.next()
-}
+})
 
 export const config = {
   matcher: [
