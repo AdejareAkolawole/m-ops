@@ -1,7 +1,5 @@
 "use client"
 import { useState } from "react"
-import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { signUpWithGitHub } from "./actions"
 import { GitHubSubmitButton, Spinner } from "@/components/AuthLoader"
@@ -12,7 +10,8 @@ export default function SignupPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [done, setDone] = useState(false)
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -32,8 +31,44 @@ export default function SignupPage() {
       return
     }
 
+    setDone(true)
+  }
+
+  async function handleResend() {
+    setResendStatus("sending")
+    // Sign in to get a session so the resend endpoint can auth
+    const { signIn } = await import("next-auth/react")
     await signIn("credentials", { email, password, redirect: false })
-    router.push("/dashboard")
+    const res = await fetch("/api/auth/resend-verification", { method: "POST" })
+    setResendStatus(res.ok ? "sent" : "idle")
+  }
+
+  if (done) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#080808", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+        <div style={{ width: "100%", maxWidth: "380px", textAlign: "center" }}>
+          <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: "#111", border: "1px solid #1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: "24px" }}>✉️</div>
+          <h1 style={{ color: "#fff", fontSize: "20px", fontWeight: 700, margin: "0 0 10px", letterSpacing: "-0.03em" }}>Check your inbox</h1>
+          <p style={{ color: "#555", fontSize: "13.5px", lineHeight: 1.6, margin: "0 0 6px" }}>
+            We sent a verification link to
+          </p>
+          <p style={{ color: "#bbb", fontSize: "13.5px", fontWeight: 600, margin: "0 0 32px" }}>{email}</p>
+          <p style={{ color: "#444", fontSize: "12.5px", lineHeight: 1.7, margin: "0 0 28px" }}>
+            Click the link in the email to verify your account and access your dashboard. Check your spam folder if you don&apos;t see it.
+          </p>
+          <button
+            onClick={handleResend}
+            disabled={resendStatus !== "idle"}
+            style={{ width: "100%", padding: "11px", borderRadius: "9px", background: resendStatus === "sent" ? "#111" : "#1a1a1a", color: resendStatus === "sent" ? "#555" : "#aaa", fontSize: "13px", fontWeight: 500, border: "1px solid #1e1e1e", cursor: resendStatus !== "idle" ? "not-allowed" : "pointer", marginBottom: "12px" }}
+          >
+            {resendStatus === "sending" ? "Sending…" : resendStatus === "sent" ? "Email resent — check your inbox" : "Resend verification email"}
+          </button>
+          <Link href="/login" style={{ display: "block", color: "#333", fontSize: "13px", textDecoration: "none", textAlign: "center" }}>
+            Back to sign in
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
