@@ -154,10 +154,22 @@ export default function SettingsPage() {
       if (d.pagerdutyKey) setPagerdutyKey(d.pagerdutyKey)
       if (d.customIntervalSec) setCustomInterval(d.customIntervalSec)
     }).catch(() => {})
-    // Handle Slack OAuth redirect result
+    // Handle redirect params
     const params = new URLSearchParams(window.location.search)
     if (params.get("slack") === "connected") { setSlackConnected(true); showToast("success", "Slack connected!"); window.history.replaceState({}, "", "/settings?tab=alerts") }
     if (params.get("slack") === "error") { showToast("error", "Slack connection failed. Try again."); window.history.replaceState({}, "", "/settings?tab=alerts") }
+    if (params.get("plan") === "upgraded") {
+      setTab("billing")
+      // Re-fetch plan so UI reflects the new tier immediately
+      fetch("/api/user/plan").then(r => r.json()).then(d => { if (d.plan) setPlan(d.plan) })
+      showToast("success", "🎉 Plan upgraded successfully! Welcome to the next tier.")
+      window.history.replaceState({}, "", "/settings?tab=billing")
+    }
+    if (params.get("plan") === "cancelled") {
+      setTab("billing")
+      showToast("error", "Checkout cancelled — no charge was made.")
+      window.history.replaceState({}, "", "/settings?tab=billing")
+    }
     if (params.get("tab")) setTab(params.get("tab") as Tab)
     fetch("/api/team").then(r => r.json()).then(d => { if (Array.isArray(d)) setTeamMembers(d) }).catch(() => {})
     fetch("/api/support/book").then(r => r.json()).then(d => { if (Array.isArray(d)) setSupportCalls(d) }).catch(() => {})
