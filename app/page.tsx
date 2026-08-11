@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import {
   SecurityCheckIcon, CodeIcon, FlashIcon, CpuIcon, CloudServerIcon,
   EyeIcon, ValidationIcon, DashboardCircleIcon, ArrowRightBigIcon,
-  AiScanIcon, ScanIcon,
+  AiScanIcon, ScanIcon, Alert01Icon, SearchListIcon, GitBranchIcon, Clock01Icon,
 } from "hugeicons-react"
 
 function useInView() {
@@ -270,13 +270,15 @@ export default function LandingPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: "1px", background: "#e8e8e8", borderRadius: "16px", overflow: "hidden", border: "1px solid #e8e8e8", textAlign: "left" }}>
             {[
-              { emoji: "😰", problem: "User reports it's down", reality: "You find out from a Slack DM, not an alert" },
-              { emoji: "🔍", problem: "You grep through logs", reality: "Thousands of lines, no clear cause" },
-              { emoji: "🤔", problem: "Was it the last deploy?", reality: "Or the DB? Or a dependency? No way to tell" },
-              { emoji: "⏱️", problem: "An hour goes by", reality: "You're still debugging instead of fixing" },
-            ].map(({ emoji, problem, reality }) => (
+              { Icon: Alert01Icon, problem: "User reports it's down", reality: "You find out from a Slack DM, not an alert" },
+              { Icon: SearchListIcon, problem: "You grep through logs", reality: "Thousands of lines, no clear cause" },
+              { Icon: GitBranchIcon, problem: "Was it the last deploy?", reality: "Or the DB? Or a dependency? No way to tell" },
+              { Icon: Clock01Icon, problem: "An hour goes by", reality: "You're still debugging instead of fixing" },
+            ].map(({ Icon, problem, reality }) => (
               <div key={problem} style={{ background: "#fff", padding: "28px 24px" }}>
-                <div style={{ fontSize: "24px", marginBottom: "12px" }}>{emoji}</div>
+                <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: "#fafafa", border: "1px solid #f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                  <Icon size={18} color="#888" />
+                </div>
                 <p style={{ fontSize: "13.5px", fontWeight: 700, color: "#0a0a0a", margin: "0 0 6px" }}>{problem}</p>
                 <p style={{ fontSize: "12.5px", color: "#aaa", margin: 0, lineHeight: 1.6 }}>{reality}</p>
               </div>
