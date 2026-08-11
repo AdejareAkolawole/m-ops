@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import {
   SecurityCheckIcon, CodeIcon, FlashIcon, CpuIcon, CloudServerIcon,
   EyeIcon, ValidationIcon, DashboardCircleIcon, ArrowRightBigIcon,
-  AiScanIcon, ScanIcon, Alert01Icon, SearchListIcon, GitBranchIcon, Clock01Icon,
+  AiScanIcon, ScanIcon, Alert01Icon, SearchList01Icon, GitBranchIcon, Clock01Icon,
 } from "hugeicons-react"
 
 function useInView() {
@@ -271,7 +271,7 @@ export default function LandingPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: "1px", background: "#e8e8e8", borderRadius: "16px", overflow: "hidden", border: "1px solid #e8e8e8", textAlign: "left" }}>
             {[
               { Icon: Alert01Icon, problem: "User reports it's down", reality: "You find out from a Slack DM, not an alert" },
-              { Icon: SearchListIcon, problem: "You grep through logs", reality: "Thousands of lines, no clear cause" },
+              { Icon: SearchList01Icon, problem: "You grep through logs", reality: "Thousands of lines, no clear cause" },
               { Icon: GitBranchIcon, problem: "Was it the last deploy?", reality: "Or the DB? Or a dependency? No way to tell" },
               { Icon: Clock01Icon, problem: "An hour goes by", reality: "You're still debugging instead of fixing" },
             ].map(({ Icon, problem, reality }) => (
