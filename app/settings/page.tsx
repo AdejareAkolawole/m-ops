@@ -802,61 +802,142 @@ export default function SettingsPage() {
 
             {tab === "billing" && (
               <>
-                <div style={S.card} className="settings-card">
-                  <p style={S.cardTitle}>Current plan</p>
-                  <p style={S.cardDesc}>Your active subscription tier.</p>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{
-                      padding: "4px 12px", borderRadius: "100px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.04em",
-                      background: plan === "free" ? "#1a1a1a" : "#1e1b4b", color: plan === "free" ? "#555" : "#a5b4fc",
-                      border: `1px solid ${plan === "free" ? "#222" : "#312e81"}`,
-                    }}>
-                      {plan.toUpperCase()}
-                    </span>
-                    <span style={{ color: "#444", fontSize: "13px" }}>
-                      {plan === "free" ? "Free plan — limited to 3 projects, 5-min intervals" :
-                       plan === "pro" ? "Pro plan — unlimited projects, 30-sec intervals, AI analysis" :
-                       "Team plan — everything in Pro + 5 seats, SLA reports"}
-                    </span>
+                {/* Current plan banner */}
+                <div style={{ ...S.card, background: plan === "free" ? "#111" : plan === "pro" ? "#0e0e1e" : "#0a1a12", border: `1px solid ${plan === "free" ? "#1e1e1e" : plan === "pro" ? "#2a2a5e" : "#1a3a24"}` }} className="settings-card">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                        <span style={{
+                          padding: "3px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em",
+                          background: plan === "free" ? "#1a1a1a" : plan === "pro" ? "#1e1b4b" : "#0d2a1a",
+                          color: plan === "free" ? "#555" : plan === "pro" ? "#a5b4fc" : "#4ade80",
+                          border: `1px solid ${plan === "free" ? "#282828" : plan === "pro" ? "#312e81" : "#1a4a2a"}`,
+                        }}>{plan.toUpperCase()}</span>
+                        <span style={{ color: "#888", fontSize: "12px" }}>Current plan</span>
+                      </div>
+                      <p style={{ color: "#e8e8e8", fontSize: "14px", fontWeight: 600, margin: "0 0 4px" }}>
+                        {plan === "free" ? "Free" : plan === "pro" ? "Pro — $2/month" : "Team — $5/month"}
+                      </p>
+                      <p style={{ color: "#555", fontSize: "12px", margin: 0 }}>
+                        {plan === "free" ? "3 projects · 5-min check intervals · Email alerts only" :
+                         plan === "pro" ? "Unlimited projects · 30-sec intervals · AI analysis · Slack alerts" :
+                         "Everything in Pro · 5 team seats · SLA reports · Dedicated support"}
+                      </p>
+                    </div>
+                    {plan !== "free" && (
+                      <a href="mailto:hello@m-ops.pro" style={{ ...S.btn, background: "#1a1a1a", color: "#555", border: "1px solid #222", fontSize: 12, textDecoration: "none", display: "inline-block" }}>
+                        Manage subscription
+                      </a>
+                    )}
                   </div>
                 </div>
 
-                {plan === "free" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {[
-                      { name: "pro", label: "Pro", price: "$2/mo", features: ["Unlimited projects", "30-sec intervals", "AI root cause analysis", "Slack & alerts"] },
-                      { name: "team", label: "Team", price: "$5/mo", features: ["Everything in Pro", "5 team seats", "SLA reports", "Dedicated support"] },
-                    ].map(({ name, label, price, features }) => (
-                      <div key={name} style={{ ...S.card, marginBottom: 0 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "12px" }}>
-                          <p style={{ ...S.cardTitle, margin: 0 }}>{label}</p>
-                          <span style={{ color: "#e8e8e8", fontSize: "16px", fontWeight: 700 }}>{price}</span>
+                {/* Feature comparison table */}
+                <div style={S.card} className="settings-card">
+                  <p style={{ ...S.cardTitle, marginBottom: 4 }}>Compare plans</p>
+                  <p style={{ ...S.cardDesc, marginBottom: 20 }}>Everything included at each tier.</p>
+                  <div style={{ overflowX: "auto" as const }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 12 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: "left" as const, padding: "8px 12px 8px 0", color: "#444", fontWeight: 600, borderBottom: "1px solid #1e1e1e", width: "40%" }}>Feature</th>
+                          {(["free", "pro", "team"] as const).map(p => (
+                            <th key={p} style={{ textAlign: "center" as const, padding: "8px 12px", color: plan === p ? "#e8e8e8" : "#444", fontWeight: 700, borderBottom: "1px solid #1e1e1e", background: plan === p ? "#161616" : "transparent", borderRadius: plan === p ? "6px 6px 0 0" : 0 }}>
+                              {p.toUpperCase()}
+                              {plan === p && <span style={{ display: "block", fontSize: 9, fontWeight: 500, color: "#555", marginTop: 2 }}>current</span>}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { label: "Price", free: "Free", pro: "$2/mo", team: "$5/mo" },
+                          { label: "Projects", free: "3 max", pro: "Unlimited", team: "Unlimited" },
+                          { label: "Check interval", free: "5 minutes", pro: "30 seconds", team: "30 seconds" },
+                          { label: "Uptime history", free: "7 days", pro: "90 days", team: "90 days" },
+                          { label: "Email alerts", free: "✓", pro: "✓", team: "✓" },
+                          { label: "Slack alerts", free: "—", pro: "✓", team: "✓" },
+                          { label: "PagerDuty", free: "—", pro: "✓", team: "✓" },
+                          { label: "AI root cause analysis", free: "—", pro: "✓", team: "✓" },
+                          { label: "Code insights", free: "—", pro: "✓", team: "✓" },
+                          { label: "Team seats", free: "1", pro: "1", team: "5" },
+                          { label: "SLA reports", free: "—", pro: "—", team: "✓" },
+                          { label: "Support call scheduling", free: "—", pro: "—", team: "✓" },
+                        ].map((row, i) => (
+                          <tr key={row.label} style={{ background: i % 2 === 0 ? "transparent" : "#0d0d0d" }}>
+                            <td style={{ padding: "9px 12px 9px 0", color: "#666", borderBottom: "1px solid #141414" }}>{row.label}</td>
+                            {(["free", "pro", "team"] as const).map(p => (
+                              <td key={p} style={{ textAlign: "center" as const, padding: "9px 12px", borderBottom: "1px solid #141414", background: plan === p ? "#161616" : "transparent",
+                                color: row[p] === "✓" ? "#22c55e" : row[p] === "—" ? "#282828" : plan === p ? "#e8e8e8" : "#555", fontWeight: row[p] === "✓" ? 700 : 400
+                              }}>
+                                {row[p]}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Upgrade cards — only show if not on team */}
+                {plan !== "team" && (
+                  <div style={{ display: "grid", gridTemplateColumns: plan === "free" ? "1fr 1fr" : "1fr", gap: "12px" }}>
+                    {(plan === "free" ? [
+                      { name: "pro", label: "Pro", price: "$2", period: "/month", tagline: "For serious solo developers", highlight: true,
+                        features: ["Unlimited projects", "30-second check intervals", "90-day uptime history", "AI root cause analysis", "Code insights", "Slack & PagerDuty alerts"] },
+                      { name: "team", label: "Team", price: "$5", period: "/month", tagline: "For teams that ship together", highlight: false,
+                        features: ["Everything in Pro", "5 team seats", "SLA reports & exports", "Support call scheduling", "Shared workspace", "Priority support"] },
+                    ] : [
+                      { name: "team", label: "Team", price: "$5", period: "/month", tagline: "For teams that ship together", highlight: true,
+                        features: ["Everything in Pro", "5 team seats", "SLA reports & exports", "Support call scheduling", "Shared workspace", "Priority support"] },
+                    ]).map(({ name, label, price, period, tagline, highlight, features }) => (
+                      <div key={name} style={{ ...S.card, marginBottom: 0, border: highlight ? "1px solid #312e81" : "1px solid #1e1e1e", background: highlight ? "#0e0e1e" : "#111", position: "relative" as const }}>
+                        {highlight && <span style={{ position: "absolute" as const, top: -1, right: 20, background: "#6366f1", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: "0 0 8px 8px", letterSpacing: "0.04em" }}>RECOMMENDED</span>}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                          <div>
+                            <p style={{ ...S.cardTitle, margin: "0 0 4px" }}>{label}</p>
+                            <p style={{ color: "#555", fontSize: 12, margin: 0 }}>{tagline}</p>
+                          </div>
+                          <div style={{ textAlign: "right" as const }}>
+                            <span style={{ color: "#e8e8e8", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em" }}>{price}</span>
+                            <span style={{ color: "#444", fontSize: 12 }}>{period}</span>
+                          </div>
                         </div>
-                        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", display: "flex", flexDirection: "column" as const, gap: "8px" }}>
                           {features.map(f => (
-                            <li key={f} style={{ display: "flex", gap: "8px", fontSize: "12px", color: "#555" }}>
-                              <span style={{ color: "#22c55e" }}>✓</span>{f}
+                            <li key={f} style={{ display: "flex", gap: "8px", fontSize: "12.5px", color: "#777", alignItems: "center" }}>
+                              <span style={{ color: "#22c55e", fontWeight: 700, flexShrink: 0 }}>✓</span>{f}
                             </li>
                           ))}
                         </ul>
                         <button
                           onClick={() => startCheckout(name)}
                           disabled={billingLoading === name}
-                          style={{ ...S.btn, background: "#6366f1", color: "#fff", width: "100%", opacity: billingLoading === name ? 0.7 : 1 }}
+                          style={{ ...S.btn, background: highlight ? "#6366f1" : "#1e1e1e", color: highlight ? "#fff" : "#888", border: highlight ? "none" : "1px solid #282828", width: "100%", opacity: billingLoading === name ? 0.7 : 1, fontSize: 13, fontWeight: 700 }}
                         >
-                          {billingLoading === name ? "Redirecting…" : `Upgrade to ${label}`}
+                          {billingLoading === name ? "Redirecting…" : `Upgrade to ${label} →`}
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {plan !== "free" && (
-                  <div style={S.card} className="settings-card">
-                    <p style={S.cardTitle}>Manage subscription</p>
-                    <p style={S.cardDesc}>To cancel or change your plan, contact support at hello@bachs.io or reach out via your Bachs dashboard.</p>
-                  </div>
-                )}
+                {/* FAQ */}
+                <div style={S.card} className="settings-card">
+                  <p style={{ ...S.cardTitle, marginBottom: 16 }}>Billing FAQ</p>
+                  {[
+                    { q: "When am I charged?", a: "You're charged immediately when you upgrade. Your billing cycle starts from that date each month." },
+                    { q: "Can I cancel anytime?", a: "Yes. Email hello@m-ops.pro and we'll cancel your subscription. You keep access until the end of the billing period." },
+                    { q: "What payment methods are accepted?", a: "All major credit and debit cards via Stripe. No PayPal or crypto at this time." },
+                    { q: "Is there a free trial?", a: "The Free plan is yours forever. No trial needed — upgrade when you're ready for more." },
+                  ].map(({ q, a }, i) => (
+                    <div key={i} style={{ borderBottom: i < 3 ? "1px solid #141414" : "none", paddingBottom: i < 3 ? 14 : 0, marginBottom: i < 3 ? 14 : 0 }}>
+                      <p style={{ color: "#ccc", fontSize: 13, fontWeight: 600, margin: "0 0 4px" }}>{q}</p>
+                      <p style={{ color: "#555", fontSize: 12.5, margin: 0, lineHeight: 1.6 }}>{a}</p>
+                    </div>
+                  ))}
+                </div>
               </>
             )}
           </div>

@@ -478,7 +478,7 @@ export default function Home() {
                         {!planCfg.ai && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#1a1a1a", color: "#333", border: "1px solid #222" }}>No AI</span>}
                       </div>
                       {userPlan === "free" && (
-                        <a href="/settings#billing" style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 600, color: "#a5b4fc", textDecoration: "none", padding: "4px 10px", border: "1px solid #2a1a5e", borderRadius: 7, background: "#1e1b4b", whiteSpace: "nowrap" as const }}>
+                        <a href="/settings?tab=billing" style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 600, color: "#a5b4fc", textDecoration: "none", padding: "4px 10px", border: "1px solid #2a1a5e", borderRadius: 7, background: "#1e1b4b", whiteSpace: "nowrap" as const }}>
                           Upgrade →
                         </a>
                       )}
@@ -559,7 +559,7 @@ export default function Home() {
               Upgrade to <strong style={{ color: "#a5b4fc" }}>Pro</strong> for unlimited projects, 30-second monitoring intervals, AI debugging, and Code Insights — all for $2/month.
             </p>
             <div style={{ display: "flex", gap: 10 }}>
-              <a href="/settings#billing" style={{ flex: 1, display: "block", textAlign: "center", background: "#e8e8e8", color: "#000", fontWeight: 700, fontSize: 13, padding: "10px 0", borderRadius: 10, textDecoration: "none" }}>
+              <a href="/settings?tab=billing" style={{ flex: 1, display: "block", textAlign: "center", background: "#e8e8e8", color: "#000", fontWeight: 700, fontSize: 13, padding: "10px 0", borderRadius: 10, textDecoration: "none" }}>
                 Upgrade to Pro →
               </a>
               <button onClick={() => setShowUpgradeModal(false)} style={{ padding: "10px 18px", borderRadius: 10, fontSize: 13, background: "#1a1a1a", color: "#555", border: "1px solid #222", cursor: "pointer" }}>
