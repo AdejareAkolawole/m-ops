@@ -13,6 +13,7 @@ import {
   QuestionIcon,
   Cancel01Icon,
 } from "hugeicons-react"
+// Bug01Icon and Idea01Icon used in menu items only (link to /feedback page)
 import { resetOnboarding } from "./Onboarding"
 
 const SHORTCUTS = [
@@ -30,10 +31,7 @@ interface Props {
 
 export function HelpButton({ onAddProject, plan, inline }: Props) {
   const [open, setOpen] = useState(false)
-  const [view, setView] = useState<"menu" | "shortcuts" | "feature">("menu")
-  const [featureTitle, setFeatureTitle] = useState("")
-  const [featureDesc, setFeatureDesc] = useState("")
-  const [featureSent, setFeatureSent] = useState(false)
+  const [view, setView] = useState<"menu" | "shortcuts">("menu")
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -82,14 +80,14 @@ export function HelpButton({ onAddProject, plan, inline }: Props) {
       label: "Report a bug",
       desc: "Something broken? Let us know",
       color: "#f87171", bg: "#1a0a0a", border: "#3a1a1a",
-      onClick: () => window.open("mailto:adejare.akolawole@gmail.com?subject=m-ops bug report", "_blank"),
+      onClick: () => { window.location.href = "/feedback?type=bug"; setOpen(false) },
     },
     {
       Icon: Idea01Icon,
       label: "Request a feature",
       desc: "Suggest something new",
       color: "#fbbf24", bg: "#1a1200", border: "#3a2a00",
-      onClick: () => { setView("feature"); setFeatureSent(false) },
+      onClick: () => { window.location.href = "/feedback?type=feature"; setOpen(false) },
     },
     {
       Icon: Activity01Icon,
@@ -196,59 +194,6 @@ export function HelpButton({ onAddProject, plan, inline }: Props) {
             </>
           )}
 
-          {view === "feature" && (
-            <>
-              <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", gap: 8 }}>
-                <button onClick={() => setView("menu")} style={{ background: "none", border: "none", cursor: "pointer", color: "#444", padding: 0, fontSize: 16, lineHeight: 1 }}>←</button>
-                <p style={{ fontSize: 12, fontWeight: 700, color: "#e8e8e8", margin: 0 }}>Request a feature</p>
-              </div>
-              <div style={{ padding: "16px 14px" }}>
-                {featureSent ? (
-                  <div style={{ textAlign: "center", padding: "12px 0" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "#051a10", border: "1px solid #0a3020", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                      <Idea01Icon size={22} color="#4ade80" />
-                    </div>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: "#d4d4d4", margin: "0 0 4px" }}>Request sent!</p>
-                    <p style={{ fontSize: 12, color: "#444", margin: "0 0 14px" }}>Thanks — we'll review it soon.</p>
-                    <button onClick={() => { setView("menu"); setFeatureTitle(""); setFeatureDesc("") }} style={{ fontSize: 12, color: "#666", background: "none", border: "none", cursor: "pointer" }}>Close</button>
-                  </div>
-                ) : (
-                  <>
-                    <p style={{ fontSize: 12, color: "#444", margin: "0 0 12px" }}>What would make m-ops better for you?</p>
-                    <input
-                      value={featureTitle}
-                      onChange={e => setFeatureTitle(e.target.value)}
-                      placeholder="Feature title"
-                      style={{ width: "100%", background: "#141414", border: "1px solid #1e1e1e", borderRadius: 8, padding: "8px 10px", color: "#d4d4d4", fontSize: 12.5, outline: "none", boxSizing: "border-box", marginBottom: 8 }}
-                    />
-                    <textarea
-                      value={featureDesc}
-                      onChange={e => setFeatureDesc(e.target.value)}
-                      placeholder="Describe what you'd like and why it matters…"
-                      rows={4}
-                      style={{ width: "100%", background: "#141414", border: "1px solid #1e1e1e", borderRadius: 8, padding: "8px 10px", color: "#d4d4d4", fontSize: 12.5, outline: "none", resize: "none", boxSizing: "border-box", marginBottom: 12, lineHeight: 1.6 }}
-                    />
-                    <button
-                      onClick={async () => {
-                        if (!featureTitle.trim()) return
-                        try {
-                          await fetch("/api/feedback", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ type: "feature", title: featureTitle, description: featureDesc }),
-                          })
-                        } catch {}
-                        setFeatureSent(true)
-                      }}
-                      style={{ width: "100%", padding: "9px 0", borderRadius: 9, fontSize: 13, fontWeight: 700, background: featureTitle.trim() ? "#1a1200" : "#111", color: featureTitle.trim() ? "#fbbf24" : "#2a2a2a", border: `1px solid ${featureTitle.trim() ? "#3a2a00" : "#1a1a1a"}`, cursor: featureTitle.trim() ? "pointer" : "not-allowed" }}
-                    >
-                      Submit request
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
         </div>
       )}
 

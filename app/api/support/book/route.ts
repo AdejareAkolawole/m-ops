@@ -6,8 +6,9 @@ import { planConfig } from "@/lib/plans"
 export async function GET() {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const isAdmin = session.user.email === "adejare.akolawole@gmail.com"
   const calls = await prisma.supportCall.findMany({
-    where: { userId: session.user.id },
+    where: isAdmin ? undefined : { userId: session.user.id },
     orderBy: { preferredAt: "asc" },
   })
   return NextResponse.json(calls)

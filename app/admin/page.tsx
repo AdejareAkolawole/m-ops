@@ -8,6 +8,7 @@ import {
   Shield01Icon, UserMultipleIcon, PencilEdit02Icon, FloppyDiskIcon,
   Cancel01Icon, CheckmarkCircle02Icon, AlertCircleIcon, AddSquareIcon,
   LockPasswordIcon, UserAdd01Icon, ArrowDown01Icon, Time01Icon,
+  MessageMultiple01Icon, Bug01Icon, Idea01Icon, CallIcon,
 } from "hugeicons-react"
 
 const ADMIN_EMAIL = "adejare.akolawole@gmail.com"
@@ -40,7 +41,7 @@ interface SessionRow {
 }
 interface Stats { totalUsers: number; totalSessions: number; totalAccounts: number; recentUsers: number }
 
-type Tab = "overview" | "users" | "sessions"
+type Tab = "overview" | "users" | "sessions" | "feedback"
 
 // ── tiny helpers ─────────────────────────────────────────────────────────────
 function timeAgo(iso: string) {
@@ -121,6 +122,9 @@ export default function AdminPage() {
   const [invitePw, setInvitePw] = useState("")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [revokingSession, setRevokingSession] = useState<string | null>(null)
+  const [feedbackItems, setFeedbackItems] = useState<any[]>([])
+  const [supportCalls, setSupportCalls] = useState<any[]>([])
+  const [loadingFeedback, setLoadingFeedback] = useState(false)
 
   const isAdmin = session?.user?.email === ADMIN_EMAIL
 
@@ -152,6 +156,17 @@ export default function AdminPage() {
 
   useEffect(() => { if (tab === "users") loadUsers() }, [tab, loadUsers])
   useEffect(() => { if (tab === "sessions") loadSessions() }, [tab, loadSessions])
+  useEffect(() => {
+    if (tab !== "feedback") return
+    setLoadingFeedback(true)
+    Promise.all([
+      fetch("/api/feedback").then(r => r.json()),
+      fetch("/api/support/book").then(r => r.json()),
+    ]).then(([fb, calls]) => {
+      setFeedbackItems(Array.isArray(fb) ? fb : [])
+      setSupportCalls(Array.isArray(calls) ? calls : [])
+    }).finally(() => setLoadingFeedback(false))
+  }, [tab])
 
   async function saveQuickPlan(id: string) {
     setQuickPlanLoading(true)
@@ -298,6 +313,7 @@ export default function AdminPage() {
             <NavTab id="overview" icon={<DashboardCircleIcon size={14} />} label="Overview" />
             <NavTab id="users" icon={<UserMultipleIcon size={14} />} label="Users" count={stats?.totalUsers} />
             <NavTab id="sessions" icon={<Time01Icon size={14} />} label="Sessions" count={activeSessions.length || undefined} />
+            <NavTab id="feedback" icon={<MessageMultiple01Icon size={14} />} label="Feedback" count={(feedbackItems.length + supportCalls.length) || undefined} />
             <div style={{ height: 1, background: "#181818", margin: "10px 0" }} />
             <button onClick={() => setShowInvite(true)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, fontSize: 12.5, color: "#7c3aed", background: "transparent", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}>
               <UserAdd01Icon size={14} /> Invite user
@@ -535,6 +551,118 @@ export default function AdminPage() {
             )}
 
             {/* ── SESSIONS ── */}
+            {tab === "feedback" && (
+              <>
+                {loadingFeedback ? <p style={{ color: "#333", fontSize: 13 }}>Loading…</p> : (
+                  <>
+                    {/* Support calls */}
+                    <div style={{ marginBottom: 32 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: 7, background: "#0f1020", border: "1px solid #1e2040", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <CallIcon size={13} color="#818cf8" />
+                        </div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e8", margin: 0 }}>Support calls <span style={{ color: "#333", fontWeight: 400 }}>({supportCalls.length})</span></p>
+                      </div>
+                      {supportCalls.length === 0
+                        ? <p style={{ fontSize: 13, color: "#333", padding: "16px 0" }}>No calls booked yet</p>
+                        : (
+                          <div style={{ background: "#111", border: "1px solid #1c1c1c", borderRadius: 12, overflow: "hidden" }}>
+                            {supportCalls.map((c: any, i: number) => (
+                              <div key={c.id} style={{ padding: "14px 18px", borderBottom: i < supportCalls.length - 1 ? "1px solid #161616" : "none" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                  <div>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: "#e8e8e8", margin: "0 0 2px" }}>{c.topic}</p>
+                                    <p style={{ fontSize: 11.5, color: "#444", margin: 0 }}>{c.name} · {c.email}</p>
+                                  </div>
+                                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                    <p style={{ fontSize: 11.5, color: "#818cf8", margin: "0 0 2px" }}>{new Date(c.preferredAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</p>
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: c.status === "pending" ? "#fbbf24" : "#4ade80", background: c.status === "pending" ? "#1a1200" : "#051a10", border: `1px solid ${c.status === "pending" ? "#3a2a00" : "#0a3020"}`, borderRadius: 5, padding: "1px 7px" }}>{c.status}</span>
+                                  </div>
+                                </div>
+                                {c.description && <p style={{ fontSize: 12, color: "#555", margin: "8px 0 0", lineHeight: 1.6 }}>{c.description}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+
+                    {/* Bugs */}
+                    <div style={{ marginBottom: 32 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: 7, background: "#1a0a0a", border: "1px solid #3a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Bug01Icon size={13} color="#f87171" />
+                        </div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e8", margin: 0 }}>Bug reports <span style={{ color: "#333", fontWeight: 400 }}>({feedbackItems.filter((f: any) => f.type === "bug").length})</span></p>
+                      </div>
+                      {feedbackItems.filter((f: any) => f.type === "bug").length === 0
+                        ? <p style={{ fontSize: 13, color: "#333", padding: "16px 0" }}>No bugs reported</p>
+                        : (
+                          <div style={{ background: "#111", border: "1px solid #1c1c1c", borderRadius: 12, overflow: "hidden" }}>
+                            {feedbackItems.filter((f: any) => f.type === "bug").map((f: any, i: number, arr: any[]) => (
+                              <div key={f.id} style={{ padding: "14px 18px", borderBottom: i < arr.length - 1 ? "1px solid #161616" : "none" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: "#e8e8e8", margin: "0 0 2px" }}>{f.title}</p>
+                                    <p style={{ fontSize: 11.5, color: "#444", margin: 0 }}>{f.name || f.email || "Anonymous"} · {new Date(f.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                  <select value={f.status} onChange={async e => {
+                                    await fetch("/api/feedback", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: f.id, status: e.target.value }) })
+                                    setFeedbackItems(prev => prev.map(x => x.id === f.id ? { ...x, status: e.target.value } : x))
+                                  }} style={{ fontSize: 11, background: "#1a1a1a", border: "1px solid #222", borderRadius: 6, color: "#888", padding: "3px 6px", cursor: "pointer", marginLeft: 12 }}>
+                                    <option value="open">open</option>
+                                    <option value="in_progress">in progress</option>
+                                    <option value="resolved">resolved</option>
+                                    <option value="wont_fix">won't fix</option>
+                                  </select>
+                                </div>
+                                {f.description && <p style={{ fontSize: 12, color: "#555", margin: "8px 0 0", lineHeight: 1.6 }}>{f.description}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+
+                    {/* Feature requests */}
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: 7, background: "#1a1200", border: "1px solid #3a2a00", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Idea01Icon size={13} color="#fbbf24" />
+                        </div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e8", margin: 0 }}>Feature requests <span style={{ color: "#333", fontWeight: 400 }}>({feedbackItems.filter((f: any) => f.type === "feature").length})</span></p>
+                      </div>
+                      {feedbackItems.filter((f: any) => f.type === "feature").length === 0
+                        ? <p style={{ fontSize: 13, color: "#333", padding: "16px 0" }}>No requests yet</p>
+                        : (
+                          <div style={{ background: "#111", border: "1px solid #1c1c1c", borderRadius: 12, overflow: "hidden" }}>
+                            {feedbackItems.filter((f: any) => f.type === "feature").map((f: any, i: number, arr: any[]) => (
+                              <div key={f.id} style={{ padding: "14px 18px", borderBottom: i < arr.length - 1 ? "1px solid #161616" : "none" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: "#e8e8e8", margin: "0 0 2px" }}>{f.title}</p>
+                                    <p style={{ fontSize: 11.5, color: "#444", margin: 0 }}>{f.name || f.email || "Anonymous"} · {new Date(f.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                  <select value={f.status} onChange={async e => {
+                                    await fetch("/api/feedback", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: f.id, status: e.target.value }) })
+                                    setFeedbackItems(prev => prev.map(x => x.id === f.id ? { ...x, status: e.target.value } : x))
+                                  }} style={{ fontSize: 11, background: "#1a1a1a", border: "1px solid #222", borderRadius: 6, color: "#888", padding: "3px 6px", cursor: "pointer", marginLeft: 12 }}>
+                                    <option value="open">open</option>
+                                    <option value="planned">planned</option>
+                                    <option value="in_progress">in progress</option>
+                                    <option value="shipped">shipped</option>
+                                    <option value="declined">declined</option>
+                                  </select>
+                                </div>
+                                {f.description && <p style={{ fontSize: 12, color: "#555", margin: "8px 0 0", lineHeight: 1.6 }}>{f.description}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
             {tab === "sessions" && (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -554,7 +682,7 @@ export default function AdminPage() {
                           <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 18px", borderBottom: i < sessions.length - 1 ? "1px solid #161616" : "none", opacity: expired ? 0.45 : 1 }}>
                             {s.user.image
                               ? <img src={s.user.image} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-                              : <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><UserIcon size={12} color="#444" /></div>}
+                              : <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#666" }}>{(s.user.name || s.user.email || "?")[0].toUpperCase()}</div>}
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ fontSize: 12.5, color: "#e8e8e8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.user.name || s.user.email}</p>

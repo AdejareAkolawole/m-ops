@@ -119,3 +119,15 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model Feedback {
+  id          String   @id @default(cuid())
+  userId      String?
+  name        String?
+  email       String?
+  type        String   // "bug" | "feature"
+  title       String
+  description String?
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+}
