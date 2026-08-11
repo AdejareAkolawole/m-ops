@@ -36,12 +36,6 @@ const FEATURES = [
   { Icon: CodeIcon, title: "Fix from here", desc: "When the AI finds an issue, it shows the exact diff. Review and apply without leaving the platform." },
 ]
 
-const STEPS = [
-  { n: "01", title: "Connect your stack", desc: "Link GitHub, your hosting provider, and any services. Takes 60 seconds." },
-  { n: "02", title: "AI learns your project", desc: "It reads your code, config, deploy history, and recent errors to build a full picture." },
-  { n: "03", title: "Debug and fix instantly", desc: "Something breaks? Ask what's wrong. Get the exact file, line, and the fix." },
-]
-
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -178,17 +172,17 @@ export default function LandingPage() {
       )}
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: "900px", margin: "0 auto", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px) 80px", textAlign: "center" }}>
+      <section style={{ maxWidth: "860px", margin: "0 auto", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px) 80px", textAlign: "center" }}>
         <div className="hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#f5f5f5", border: "1px solid #e8e8e8", borderRadius: "99px", padding: "5px 16px", fontSize: "12px", color: "#555", marginBottom: "40px", fontWeight: 500 }}>
           <FlashIcon size={12} color="#555" /> Now in early access — free for developers
         </div>
 
-        <h1 className="hero-h1" style={{ fontSize: "clamp(48px,7.5vw,88px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.055em", margin: "0 0 32px", color: "#0a0a0a" }}>
-          Your projects deserve<br />a brain.
+        <h1 className="hero-h1" style={{ fontSize: "clamp(44px,7vw,84px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.055em", margin: "0 0 28px", color: "#0a0a0a" }}>
+          Something broke.<br />Do you know why?
         </h1>
 
-        <p className="hero-sub" style={{ color: "#888", fontSize: "clamp(15px,2vw,19px)", lineHeight: 1.7, maxWidth: "560px", margin: "0 auto 48px" }}>
-          m-ops connects your GitHub, deployments, and hosting providers — then gives you an AI that actually knows your stack. Something breaks? It tells you what, why, and how to fix it.
+        <p className="hero-sub" style={{ color: "#777", fontSize: "clamp(15px,2vw,19px)", lineHeight: 1.75, maxWidth: "580px", margin: "0 auto 48px" }}>
+          Most developers find out their app is down when a user complains. m-ops watches your entire stack, and the moment something goes wrong — it tells you exactly what broke, why it broke, and how to fix it.
         </p>
 
         <div className="hero-ctas mob-col" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
@@ -200,11 +194,11 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        <p className="hero-note" style={{ color: "#ccc", fontSize: "12px", marginTop: "20px", letterSpacing: "0.02em" }}>No credit card · Free forever for personal use</p>
+        <p className="hero-note" style={{ color: "#ccc", fontSize: "12px", marginTop: "20px" }}>No credit card · Free forever for personal use</p>
       </section>
 
       {/* ── Product mockup ────────────────────────────────────────────────── */}
-      <section className="hero-mockup" style={{ maxWidth: "1080px", margin: "0 auto 140px", padding: "0 clamp(20px,4vw,48px)", position: "relative" }}>
+      <section className="hero-mockup" style={{ maxWidth: "1080px", margin: "0 auto 160px", padding: "0 clamp(20px,4vw,48px)", position: "relative" }}>
         <div style={{ borderRadius: "20px", border: "1px solid #e8e8e8", overflow: "hidden", background: "#0a0a0a", boxShadow: "0 40px 120px rgba(0,0,0,0.12)" }}>
           <div style={{ background: "#111", borderBottom: "1px solid #1a1a1a", padding: "14px 18px", display: "flex", alignItems: "center", gap: "8px" }}>
             {["#3a3a3a","#3a3a3a","#3a3a3a"].map((c,i) => <div key={i} style={{ width: "10px", height: "10px", borderRadius: "50%", background: c }} />)}
@@ -263,29 +257,135 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Monitoring section ────────────────────────────────────────────── */}
-      <section style={{ maxWidth: "1080px", margin: "0 auto 140px", padding: "0 clamp(20px,4vw,48px)" }}>
-        <div ref={monitor.ref} className={`reveal monitor-wrap${monitor.inView ? " in" : ""}`} style={{ display: "flex", gap: "60px", alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 300px", minWidth: "260px" }}>
-            <p style={{ fontSize: "11px", color: "#aaa", fontWeight: 600, letterSpacing: "0.12em", marginBottom: "14px" }}>MONITORING</p>
-            <h2 style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 20px", color: "#0a0a0a", lineHeight: 1.1 }}>
-              Every service.<br />Every minute.
+      {/* ── The Problem ───────────────────────────────────────────────────── */}
+      <section style={{ background: "#fafafa", borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0" }}>
+        <div ref={monitor.ref} className={`reveal${monitor.inView ? " in" : ""}`} style={{ maxWidth: "860px", margin: "0 auto", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px)", textAlign: "center" }}>
+          <p style={{ fontSize: "11px", color: "#bbb", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "20px" }}>SOUND FAMILIAR?</p>
+          <h2 style={{ fontSize: "clamp(28px,4vw,52px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#0a0a0a", lineHeight: 1.1, margin: "0 0 24px" }}>
+            It's 2am. Something is broken.<br />You have no idea what.
+          </h2>
+          <p style={{ color: "#888", fontSize: "clamp(14px,2vw,17px)", lineHeight: 1.8, maxWidth: "620px", margin: "0 auto 64px" }}>
+            You're SSH-ing into servers, grepping logs, checking Slack, comparing deploys — and 40 minutes later you still don't know if it's your code, your database, your hosting provider, or something else entirely.
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: "1px", background: "#e8e8e8", borderRadius: "16px", overflow: "hidden", border: "1px solid #e8e8e8", textAlign: "left" }}>
+            {[
+              { emoji: "😰", problem: "User reports it's down", reality: "You find out from a Slack DM, not an alert" },
+              { emoji: "🔍", problem: "You grep through logs", reality: "Thousands of lines, no clear cause" },
+              { emoji: "🤔", problem: "Was it the last deploy?", reality: "Or the DB? Or a dependency? No way to tell" },
+              { emoji: "⏱️", problem: "An hour goes by", reality: "You're still debugging instead of fixing" },
+            ].map(({ emoji, problem, reality }) => (
+              <div key={problem} style={{ background: "#fff", padding: "28px 24px" }}>
+                <div style={{ fontSize: "24px", marginBottom: "12px" }}>{emoji}</div>
+                <p style={{ fontSize: "13.5px", fontWeight: 700, color: "#0a0a0a", margin: "0 0 6px" }}>{problem}</p>
+                <p style={{ fontSize: "12.5px", color: "#aaa", margin: 0, lineHeight: 1.6 }}>{reality}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── The Answer ────────────────────────────────────────────────────── */}
+      <section style={{ maxWidth: "860px", margin: "0 auto", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px)", textAlign: "center" }}>
+        <div ref={stats.ref} className={`reveal${stats.inView ? " in" : ""}`}>
+          <p style={{ fontSize: "11px", color: "#bbb", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "20px" }}>WHAT IF</p>
+          <h2 style={{ fontSize: "clamp(28px,4vw,52px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#0a0a0a", lineHeight: 1.1, margin: "0 0 24px" }}>
+            Your infrastructure<br />could just tell you.
+          </h2>
+          <p style={{ color: "#888", fontSize: "clamp(14px,2vw,17px)", lineHeight: 1.8, maxWidth: "620px", margin: "0 auto 64px" }}>
+            m-ops reads your GitHub repos, watches your live services, and connects to your hosting providers. So when something goes wrong, you don't have to investigate — you just ask.
+          </p>
+
+          {/* Before / After */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", textAlign: "left" }} className="mob-col">
+            <div style={{ background: "#fafafa", border: "1px solid #f0f0f0", borderRadius: "16px", padding: "28px" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, color: "#ddd", letterSpacing: "0.1em", margin: "0 0 20px" }}>BEFORE M-OPS</p>
+              {["Find out from a user complaint","Dig through logs manually","No idea if it's code or infra","Fix takes 45+ minutes","Do it all again next time"].map(t => (
+                <div key={t} style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "12px" }}>
+                  <span style={{ color: "#f87171", fontSize: "14px", marginTop: "1px", flexShrink: 0 }}>✗</span>
+                  <span style={{ fontSize: "13.5px", color: "#aaa" }}>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: "#f0fdf4", border: "1px solid #d1fae5", borderRadius: "16px", padding: "28px" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, color: "#86efac", letterSpacing: "0.1em", margin: "0 0 20px" }}>WITH M-OPS</p>
+              {["Alerted before your users notice","Ask what broke, get a direct answer","AI pinpoints code, DB, or provider","Fix in minutes with the exact diff","Automated from now on"].map(t => (
+                <div key={t} style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "12px" }}>
+                  <span style={{ color: "#22c55e", fontSize: "14px", marginTop: "1px", flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: "13.5px", color: "#333" }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it actually works ─────────────────────────────────────────── */}
+      <section id="how" style={{ background: "#0a0a0a" }}>
+        <div ref={howit.ref} className={`reveal${howit.inView ? " in" : ""}`} style={{ maxWidth: "1080px", margin: "0 auto", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px)" }}>
+          <div style={{ textAlign: "center", marginBottom: "72px" }}>
+            <p style={{ fontSize: "11px", color: "#444", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "20px" }}>HOW IT WORKS</p>
+            <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#fff", lineHeight: 1.1 }}>
+              From chaos to clarity<br />in three steps.
             </h2>
-            <p style={{ color: "#999", fontSize: "15px", lineHeight: 1.75, margin: "0 0 32px" }}>
-              m-ops pings every project you add — Vercel deploys, manual URLs, APIs, whatever you run. The moment something goes wrong you see the status, latency, and how long it's been down.
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "24px" }}>
+            {[
+              {
+                n: "01", color: "#818cf8",
+                title: "Connect your entire stack",
+                body: "Link your GitHub repos, Vercel, Netlify, Railway, Render, Fly.io, or Heroku. Paste any URL you want monitored. It takes under 60 seconds and nothing needs configuring.",
+                detail: "GitHub · Vercel · Netlify · Railway · Render · Fly.io · Heroku"
+              },
+              {
+                n: "02", color: "#4ade80",
+                title: "The AI reads everything",
+                body: "m-ops ingests your actual codebase — not just logs. It understands your architecture, your data models, your API routes. It builds a live picture of how your stack fits together.",
+                detail: "Codebase · Deploy history · Error logs · Uptime data"
+              },
+              {
+                n: "03", color: "#f87171",
+                title: "Know before your users do",
+                body: "When a service drops or slows down, you get an alert instantly. Open the dashboard, ask what's wrong, and the AI responds with the exact file, the exact line, and the exact fix.",
+                detail: "Real-time alerts · Root cause · Code diff · One-click apply"
+              },
+            ].map(({ n, color, title, body, detail }) => (
+              <div key={n} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "20px", padding: "36px 32px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 800, color, letterSpacing: "0.06em", background: `${color}18`, border: `1px solid ${color}30`, borderRadius: "8px", padding: "4px 10px" }}>{n}</span>
+                </div>
+                <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#fff", margin: "0 0 12px", letterSpacing: "-0.025em", lineHeight: 1.3 }}>{title}</h3>
+                <p style={{ fontSize: "13.5px", color: "#555", lineHeight: 1.75, margin: "0 0 20px" }}>{body}</p>
+                <p style={{ fontSize: "11px", color: "#2a2a2a", fontWeight: 600, letterSpacing: "0.06em", borderTop: "1px solid #161616", paddingTop: "16px", margin: 0 }}>{detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Monitoring live UI ────────────────────────────────────────────── */}
+      <section style={{ maxWidth: "1080px", margin: "0 auto 140px", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px) 0" }}>
+        <div ref={features.ref} className={`reveal${features.inView ? " in" : ""}`} style={{ display: "flex", gap: "60px", alignItems: "center", flexWrap: "wrap" }} >
+          <div style={{ flex: "1 1 300px", minWidth: "260px" }}>
+            <p style={{ fontSize: "11px", color: "#bbb", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "20px" }}>MONITORING</p>
+            <h2 style={{ fontSize: "clamp(26px,3.5vw,42px)", fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 20px", color: "#0a0a0a", lineHeight: 1.15 }}>
+              You shouldn't have to<br />check if things are up.
+            </h2>
+            <p style={{ color: "#888", fontSize: "15px", lineHeight: 1.8, margin: "0 0 32px" }}>
+              m-ops pings every service you add — every 30 seconds on Pro. The moment something goes down, you get an alert with the status code, response time, and how long it's been down. Not a generic "it's broken." Actual detail.
             </p>
             {[
-              ["Incident toasts", "Real-time alerts the moment a service drops"],
-              ["Recovery tracking", "Knows when it came back and how long it was down"],
-              ["Latency history", "Spot slow services before they become incidents"],
+              ["Instant alerts", "Email, Slack, or PagerDuty the moment a service drops"],
+              ["Recovery tracking", "Automatically knows when it came back and for how long"],
+              ["Latency trends", "Spot services slowing down before they become incidents"],
             ].map(([label, desc]) => (
-              <div key={label} style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "16px" }}>
+              <div key={label} style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "18px" }}>
                 <div style={{ width: "20px", height: "20px", borderRadius: "6px", background: "#f5f5f5", border: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#0a0a0a" }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: "13.5px", fontWeight: 600, color: "#0a0a0a", marginBottom: "2px" }}>{label}</div>
-                  <div style={{ fontSize: "12.5px", color: "#aaa" }}>{desc}</div>
+                  <div style={{ fontSize: "13.5px", fontWeight: 600, color: "#0a0a0a", marginBottom: "3px" }}>{label}</div>
+                  <div style={{ fontSize: "12.5px", color: "#aaa", lineHeight: 1.5 }}>{desc}</div>
                 </div>
               </div>
             ))}
@@ -297,14 +397,14 @@ export default function LandingPage() {
                 <span style={{ fontSize: "12px", fontWeight: 700, color: "#0a0a0a" }}>Live status</span>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ade80", animation: "pulse-dot 2s ease-in-out infinite" }} />
-                  <span style={{ fontSize: "11px", color: "#888" }}>Checking every 60s</span>
+                  <span style={{ fontSize: "11px", color: "#888" }}>Checking every 30s</span>
                 </div>
               </div>
               {[
                 { name: "my-saas-app", provider: "Vercel", ok: true, ms: 142, bars: [1,1,1,1,1,1,1,1,0.8,1,1,1,1,1,1,1,1,1,1,1] },
                 { name: "api-server", provider: "Railway", ok: true, ms: 89, bars: [1,1,1,1,1,0.5,1,1,1,1,1,1,1,1,1,0.9,1,1,1,1] },
                 { name: "marketing-site", provider: "Netlify", ok: false, ms: null, bars: [1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0] },
-                { name: "admin-panel", provider: "Manual", ok: true, ms: 204, bars: [1,1,0.7,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
+                { name: "admin-panel", provider: "Fly.io", ok: true, ms: 204, bars: [1,1,0.7,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
               ].map(({ name, provider, ok, ms, bars }) => (
                 <div key={name} style={{ padding: "13px 20px", borderBottom: "1px solid #f8f8f8", display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: ok ? "#4ade80" : "#f87171", flexShrink: 0, animation: !ok ? "pulse-dot 1.5s ease-in-out infinite" : "none" }} />
@@ -336,30 +436,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats ─────────────────────────────────────────────────────────── */}
-      <div ref={stats.ref} className={`reveal${stats.inView ? " in" : ""}`} style={{ borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0" }}>
-        <div className="stats-row" style={{ maxWidth: "900px", margin: "0 auto", padding: "56px clamp(20px,4vw,48px)", display: "flex", justifyContent: "space-around", gap: "24px" }}>
-          {[
-            { val: "< 60s", label: "to connect your first project" },
-            { val: "3", label: "AI providers, zero cost" },
-            { val: "1 min", label: "monitoring interval" },
-          ].map(({ val, label }) => (
-            <div key={label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "clamp(32px,5vw,52px)", fontWeight: 800, letterSpacing: "-0.05em", color: "#0a0a0a" }}>{val}</div>
-              <div style={{ fontSize: "13px", color: "#aaa", marginTop: "6px" }}>{label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Features ──────────────────────────────────────────────────────── */}
-      <section id="features" style={{ maxWidth: "1080px", margin: "0 auto 140px", padding: "0 clamp(20px,4vw,48px)" }}>
-        <div ref={features.ref} className={`reveal${features.inView ? " in" : ""}`}>
-          <div style={{ textAlign: "center", marginBottom: "72px", paddingTop: "80px" }}>
-            <p style={{ fontSize: "11px", color: "#aaa", fontWeight: 600, letterSpacing: "0.12em", marginBottom: "14px" }}>CAPABILITIES</p>
-            <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#0a0a0a" }}>Everything your projects need.</h2>
+      {/* ── Who is this for ───────────────────────────────────────────────── */}
+      <section id="features" style={{ background: "#fafafa", borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0", margin: "140px 0 0" }}>
+        <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "clamp(80px,10vw,100px) clamp(20px,4vw,48px)" }}>
+          <div style={{ textAlign: "center", marginBottom: "64px" }}>
+            <p style={{ fontSize: "11px", color: "#bbb", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "20px" }}>WHO IT'S FOR</p>
+            <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#0a0a0a", margin: 0 }}>
+              Built for developers who ship.
+            </h2>
           </div>
-          <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: "1px", background: "#f0f0f0", borderRadius: "20px", overflow: "hidden", border: "1px solid #f0f0f0" }}>
+          <div className="feat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: "1px", background: "#e8e8e8", borderRadius: "20px", overflow: "hidden", border: "1px solid #e8e8e8" }}>
             {FEATURES.map(({ Icon, title, desc }) => (
               <div key={title} className="feat-card" style={{ background: "#fff", padding: "36px 32px" }}>
                 <div style={{ width: "38px", height: "38px", borderRadius: "11px", background: "#f5f5f5", border: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px" }}>
@@ -367,29 +453,6 @@ export default function LandingPage() {
                 </div>
                 <h3 style={{ fontSize: "14.5px", fontWeight: 700, color: "#0a0a0a", margin: "0 0 8px", letterSpacing: "-0.02em" }}>{title}</h3>
                 <p style={{ fontSize: "13px", color: "#999", lineHeight: 1.7, margin: 0 }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ──────────────────────────────────────────────────── */}
-      <section id="how" style={{ maxWidth: "720px", margin: "0 auto 140px", padding: "0 clamp(20px,4vw,48px)" }}>
-        <div ref={howit.ref} className={`reveal${howit.inView ? " in" : ""}`}>
-          <div style={{ textAlign: "center", marginBottom: "72px" }}>
-            <p style={{ fontSize: "11px", color: "#aaa", fontWeight: 600, letterSpacing: "0.12em", marginBottom: "14px" }}>HOW IT WORKS</p>
-            <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#0a0a0a" }}>Up and running in minutes.</h2>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {STEPS.map(({ n, title, desc }, i) => (
-              <div key={n} className="step-row" style={{ display: "flex", gap: "28px", padding: "36px 20px", borderBottom: i < STEPS.length-1 ? "1px solid #f0f0f0" : "none", borderRadius: "12px" }}>
-                <div style={{ flexShrink: 0, width: "44px", height: "44px", borderRadius: "12px", background: "#f5f5f5", border: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#888", letterSpacing: "0.02em" }}>{n}</span>
-                </div>
-                <div style={{ paddingTop: "8px" }}>
-                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0a0a0a", margin: "0 0 8px", letterSpacing: "-0.02em" }}>{title}</h3>
-                  <p style={{ fontSize: "14px", color: "#999", lineHeight: 1.7, margin: 0 }}>{desc}</p>
-                </div>
               </div>
             ))}
           </div>
@@ -438,19 +501,22 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────────────── */}
-      <section ref={cta.ref} className={`reveal${cta.inView ? " in" : ""}`} style={{ background: "#ffffff" }}>
-        <div style={{ maxWidth: "720px", margin: "0 auto", padding: "clamp(80px,10vw,100px) clamp(20px,4vw,48px)", textAlign: "center" }}>
-          <h2 style={{ fontSize: "clamp(32px,5vw,56px)", fontWeight: 800, letterSpacing: "-0.05em", margin: "0 0 20px", color: "#0a0a0a" }}>Your stack deserves better.</h2>
-          <p style={{ color: "#666", fontSize: "16px", marginBottom: "44px", lineHeight: 1.7 }}>
-            Connect your first project and the AI starts reading it immediately.<br />No setup. No config. No docs.
+      <section ref={cta.ref} className={`reveal${cta.inView ? " in" : ""}`} style={{ background: "#0a0a0a" }}>
+        <div style={{ maxWidth: "760px", margin: "0 auto", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px)", textAlign: "center" }}>
+          <p style={{ fontSize: "11px", color: "#333", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "20px" }}>GET STARTED</p>
+          <h2 style={{ fontSize: "clamp(32px,5vw,56px)", fontWeight: 800, letterSpacing: "-0.05em", margin: "0 0 20px", color: "#fff", lineHeight: 1.1 }}>
+            Stop debugging in the dark.
+          </h2>
+          <p style={{ color: "#555", fontSize: "clamp(14px,2vw,17px)", marginBottom: "48px", lineHeight: 1.8, maxWidth: "540px", margin: "0 auto 48px" }}>
+            Connect your first project and m-ops starts watching it immediately — no setup, no config, no docs. Free forever for personal use.
           </p>
-          <Link href="/signup" className="cta-primary" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#0a0a0a", color: "#fff", fontSize: "14px", fontWeight: 700, padding: "14px 36px", borderRadius: "12px", textDecoration: "none" }}>
-            Get started free <ArrowRightBigIcon size={14} color="#fff" />
+          <Link href="/signup" className="cta-primary" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#fff", color: "#0a0a0a", fontSize: "14px", fontWeight: 700, padding: "14px 36px", borderRadius: "12px", textDecoration: "none" }}>
+            Start for free <ArrowRightBigIcon size={14} color="#0a0a0a" />
           </Link>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "24px", marginTop: "28px", flexWrap: "wrap" }}>
             {["No credit card", "Free for personal use", "Cancel anytime"].map(t => (
-              <div key={t} style={{ display: "flex", alignItems: "center", gap: "6px", color: "#888", fontSize: "12px" }}>
-                <ValidationIcon size={12} color="#aaa" /> {t}
+              <div key={t} style={{ display: "flex", alignItems: "center", gap: "6px", color: "#333", fontSize: "12px" }}>
+                <ValidationIcon size={12} color="#333" /> {t}
               </div>
             ))}
           </div>
