@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
+import { prisma } from "@/lib/prisma"
 
-// Returns the GitHub token from the NextAuth session (stored when user signed in with GitHub).
-// This avoids needing a second OAuth app callback URL.
 export async function GET() {
   const session = await auth()
-  const githubToken = (session as any)?.githubToken
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 })
+  }
+
+  // Try JWT first (populated on sign-in), fall back to DB (works for existing sessions)
+  let githubToken = (session as any)?.githubToken
+
+  if (!githubToken) {
+    const account = await prisma.account.findFirst({
+      where: { userId: session.user.id, provider: "github" },
+      select: { access_token: true },
+    })
+    githubToken = account?.access_token ?? null
+  }
 
   if (!githubToken) {
     return NextResponse.json({ error: "No GitHub token. Sign in with GitHub to use Code Insights." }, { status: 401 })
