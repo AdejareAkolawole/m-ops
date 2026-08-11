@@ -397,31 +397,31 @@ export default function Home() {
                   </button>
                 )}
                 {session?.user && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "4px", paddingLeft: "12px", borderLeft: "1px solid #1e1e1e" }}>
-                    <a href="/settings" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "4px", paddingLeft: "14px", borderLeft: "1px solid #1e1e1e" }}>
+                    <a href="/settings" style={{ display: "flex", alignItems: "center", gap: "9px", textDecoration: "none", padding: "6px 10px", borderRadius: "8px", border: "1px solid #1e1e1e", background: "#0f0f0f" }}>
                       {session.user.image ? (
-                        <img src={session.user.image} alt="" style={{ width: "26px", height: "26px", borderRadius: "50%", objectFit: "cover" }} />
+                        <img src={session.user.image} alt="" style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover" }} />
                       ) : (
-                        <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "linear-gradient(135deg,#7c3aed,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, color: "#fff" }}>
+                        <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "linear-gradient(135deg,#7c3aed,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, color: "#fff" }}>
                           {(session.user.name || session.user.email || "U")[0].toUpperCase()}
                         </div>
                       )}
-                      <span style={{ fontSize: "12px", color: "#555", maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#bbb", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {session.user.name || session.user.email}
                       </span>
                     </a>
                     {session.user.email === ADMIN_EMAIL && (
-                      <a href="/admin" style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11.5px", color: "#7c3aed", textDecoration: "none", padding: "2px 4px" }}>
-                        <Shield01Icon size={11} /> Admin
+                      <a href="/admin" style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#a78bfa", textDecoration: "none", padding: "6px 12px", borderRadius: "8px", border: "1px solid #2d1f6e", background: "#130e2e" }}>
+                        <Shield01Icon size={13} /> Admin
                       </a>
                     )}
                     <button
                       onClick={async () => { setSigningOut(true); await signOut({ callbackUrl: "/" }) }}
                       disabled={signingOut}
-                      style={{ fontSize: "11.5px", color: "#333", background: "none", border: "none", cursor: signingOut ? "not-allowed" : "pointer", padding: "2px 4px", display: "flex", alignItems: "center", gap: "5px", opacity: signingOut ? 0.5 : 1 }}
+                      style={{ fontSize: "13px", fontWeight: 500, color: "#555", background: "#0f0f0f", border: "1px solid #1e1e1e", borderRadius: "8px", cursor: signingOut ? "not-allowed" : "pointer", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px", opacity: signingOut ? 0.5 : 1 }}
                     >
-                      {signingOut && <Spinner size={11} color="#555" />}
-                      {signingOut ? "Signing out..." : "Sign out"}
+                      {signingOut && <Spinner size={12} color="#555" />}
+                      {signingOut ? "Signing out…" : "Sign out"}
                     </button>
                   </div>
                 )}
