@@ -15,6 +15,7 @@ function LoginInner() {
   const params = useSearchParams()
   const verified = params.get("verified") === "1"
   const tokenExpired = params.get("error") === "token_expired"
+  const callbackUrl = params.get("callbackUrl") || "/dashboard"
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -25,7 +26,9 @@ function LoginInner() {
     if (res?.error) {
       setError("Invalid email or password")
     } else {
-      router.push("/dashboard")
+      // router.refresh() flushes the updated JWT cookie before navigating
+      router.refresh()
+      router.push(callbackUrl)
     }
   }
 
