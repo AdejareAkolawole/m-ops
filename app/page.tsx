@@ -173,10 +173,6 @@ export default function LandingPage() {
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section style={{ maxWidth: "860px", margin: "0 auto", padding: "clamp(80px,10vw,120px) clamp(20px,4vw,48px) 80px", textAlign: "center" }}>
-        <div className="hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#f5f5f5", border: "1px solid #e8e8e8", borderRadius: "99px", padding: "5px 16px", fontSize: "12px", color: "#555", marginBottom: "40px", fontWeight: 500 }}>
-          <FlashIcon size={12} color="#555" /> Now in early access — free for developers
-        </div>
-
         <h1 className="hero-h1" style={{ fontSize: "clamp(44px,7vw,84px)", fontWeight: 800, lineHeight: 1.02, letterSpacing: "-0.055em", margin: "0 0 28px", color: "#0a0a0a" }}>
           Something broke.<br />Do you know why?
         </h1>
