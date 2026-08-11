@@ -12,6 +12,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   trustHost: true,
   debug: false,
+  cookies: {
+    pkceCodeVerifier: {
+      name: "next-auth.pkce.code_verifier",
+      options: { httpOnly: true, sameSite: "lax", path: "/", secure: true },
+    },
+    state: {
+      name: "next-auth.state",
+      options: { httpOnly: true, sameSite: "lax", path: "/", secure: true },
+    },
+  },
   providers: [
     GitHub({
       clientId: process.env.GITHUB_CLIENT_ID!,
