@@ -36,6 +36,219 @@ const FEATURES = [
   { Icon: CodeIcon, title: "Fix from here", desc: "When the AI finds an issue, it shows the exact diff. Review and apply without leaving the platform." },
 ]
 
+const DEMO_SCENARIOS = [
+  {
+    tab: "Debug with AI",
+    status: { label: "Service degraded", color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.2)" },
+    project: "my-saas-app",
+    question: "What's causing the slow response times?",
+    answer: [
+      { text: "Found the bottleneck in " },
+      { text: "lib/db.ts:47", code: true },
+      { text: " — an N+1 query inside your product loop. Each request triggers " },
+      { text: "~140 separate DB calls", highlight: true },
+      { text: ". Here's the fix:" },
+    ],
+    code: ["+ const products = await prisma.product.findMany({", "+   include: { variants: true, images: true }", "+ })"],
+  },
+  {
+    tab: "Incidents",
+    status: { label: "● Down", color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.2)" },
+    project: "api-gateway",
+    question: "Why did it go down at 3:14am?",
+    answer: [
+      { text: "Memory exceeded on " },
+      { text: "prod-eu-west-1", code: true },
+      { text: ". The deployment at " },
+      { text: "3:12am", highlight: true },
+      { text: " introduced a memory leak in the websocket handler — connections weren't being closed." },
+    ],
+    code: ["- ws.on('close', () => {})", "+ ws.on('close', () => cleanup(ws))", "+ ws.on('error', () => cleanup(ws))"],
+  },
+  {
+    tab: "Performance",
+    status: { label: "↑ 2.4s p99", color: "#fb923c", bg: "rgba(251,146,60,0.1)", border: "rgba(251,146,60,0.2)" },
+    project: "checkout-service",
+    question: "Why did p99 spike after the deploy?",
+    answer: [
+      { text: "The new " },
+      { text: "validateAddress()", code: true },
+      { text: " call is making a " },
+      { text: "synchronous external API request", highlight: true },
+      { text: " on every checkout. Move it to a background job." },
+    ],
+    code: ["- await validateAddress(order)", "+ queue.add('validate-address', { orderId })", "+ // runs async, no impact on checkout latency"],
+  },
+]
+
+function DemoMockup() {
+  const [scene, setScene] = useState(0)
+  const [phase, setPhase] = useState<"question" | "typing" | "done">("question")
+  const [typedChars, setTypedChars] = useState(0)
+  const [codeLines, setCodeLines] = useState(0)
+
+  const current = DEMO_SCENARIOS[scene]
+  const fullAnswer = current.answer.map(p => p.text).join("")
+
+  useEffect(() => {
+    setPhase("question")
+    setTypedChars(0)
+    setCodeLines(0)
+
+    const t1 = setTimeout(() => setPhase("typing"), 1200)
+    return () => clearTimeout(t1)
+  }, [scene])
+
+  useEffect(() => {
+    if (phase !== "typing") return
+    if (typedChars < fullAnswer.length) {
+      const t = setTimeout(() => setTypedChars(c => c + 1), 18)
+      return () => clearTimeout(t)
+    } else {
+      const t = setTimeout(() => {
+        setCodeLines(1)
+        setTimeout(() => setCodeLines(2), 220)
+        setTimeout(() => {
+          setCodeLines(3)
+          setPhase("done")
+        }, 440)
+      }, 300)
+      return () => clearTimeout(t)
+    }
+  }, [phase, typedChars, fullAnswer.length])
+
+  useEffect(() => {
+    if (phase !== "done") return
+    const t = setTimeout(() => {
+      setScene(s => (s + 1) % DEMO_SCENARIOS.length)
+    }, 3200)
+    return () => clearTimeout(t)
+  }, [phase])
+
+  // Render answer with partial typing
+  function renderAnswer() {
+    let remaining = typedChars
+    const parts: React.ReactNode[] = []
+    for (const part of current.answer) {
+      if (remaining <= 0) break
+      const slice = part.text.slice(0, remaining)
+      remaining -= part.text.length
+      if (part.code) {
+        parts.push(<span key={part.text} style={{ color: "#e8e8e8", background: "#141414", padding: "1px 7px", borderRadius: "4px", fontFamily: "monospace", fontSize: "11px" }}>{slice}</span>)
+      } else if (part.highlight) {
+        parts.push(<span key={part.text} style={{ color: "#f87171", fontWeight: 600 }}>{slice}</span>)
+      } else {
+        parts.push(<span key={part.text}>{slice}</span>)
+      }
+    }
+    return parts
+  }
+
+  const tabs = ["Overview", "Performance", "Incidents", "Code Insights", "Debug with AI"]
+
+  return (
+    <section className="hero-mockup" style={{ maxWidth: "1080px", margin: "0 auto 160px", padding: "0 clamp(20px,4vw,48px)", position: "relative" }}>
+      <style>{`
+        @keyframes fade-scene { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .demo-scene { animation: fade-scene 0.4s ease forwards; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+        .cursor { display: inline-block; width: 1.5px; height: 13px; background: #4ade80; margin-left: 1px; vertical-align: middle; animation: blink 0.8s step-end infinite; }
+      `}</style>
+      <div style={{ borderRadius: "20px", border: "1px solid #e8e8e8", overflow: "hidden", background: "#0a0a0a", boxShadow: "0 40px 120px rgba(0,0,0,0.12)" }}>
+        {/* Title bar */}
+        <div style={{ background: "#111", borderBottom: "1px solid #1a1a1a", padding: "12px 18px", display: "flex", alignItems: "center", gap: "8px" }}>
+          {["#ff5f57","#febc2e","#28c840"].map((c,i) => <div key={i} style={{ width: "10px", height: "10px", borderRadius: "50%", background: c }} />)}
+          <div style={{ flex: 1, background: "#1a1a1a", borderRadius: "6px", height: "22px", maxWidth: "220px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ade80" }} />
+            <span style={{ color: "#555", fontSize: "10px" }}>m-ops.pro/dashboard</span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", height: "420px" }}>
+          {/* Sidebar */}
+          <div className="hide-mob" style={{ width: "190px", borderRight: "1px solid #141414", padding: "16px 12px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+            {tabs.map(label => {
+              const active = label === current.tab
+              return (
+                <div key={label} style={{ padding: "8px 10px", borderRadius: "8px", fontSize: "11.5px", fontWeight: active ? 600 : 400, background: active ? "#1a1a1a" : "transparent", color: active ? "#fff" : "#2a2a2a", display: "flex", alignItems: "center", gap: "8px", transition: "all 0.3s ease" }}>
+                  <div style={{ width: "6px", height: "6px", borderRadius: "2px", background: active ? "#60a5fa" : "#1e1e1e", transition: "background 0.3s" }} />
+                  {label}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Main content */}
+          <div className="demo-scene" key={scene} style={{ flex: 1, padding: "20px 28px", display: "flex", flexDirection: "column", gap: "14px", overflow: "hidden" }}>
+            {/* Status + project */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ padding: "4px 10px", borderRadius: "6px", background: current.status.bg, border: `1px solid ${current.status.border}`, fontSize: "11px", color: current.status.color, fontWeight: 600, display: "flex", alignItems: "center", gap: "5px" }}>
+                <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: current.status.color, animation: "pulse-dot 1.5s ease-in-out infinite" }} />
+                {current.status.label}
+              </div>
+              <div style={{ padding: "4px 10px", borderRadius: "6px", background: "#111", border: "1px solid #1a1a1a", fontSize: "11px", color: "#444" }}>{current.project}</div>
+            </div>
+
+            {/* Quick prompts */}
+            <div style={{ display: "flex", gap: "7px", flexWrap: "wrap" }}>
+              {["What's wrong?","Why is it slow?","Security check","Explain this"].map(l => (
+                <div key={l} style={{ padding: "5px 12px", borderRadius: "7px", background: "#111", border: "1px solid #1a1a1a", fontSize: "10.5px", color: "#2a2a2a" }}>{l}</div>
+              ))}
+            </div>
+
+            {/* Conversation */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+              {/* User message */}
+              <div style={{ padding: "12px 0", borderBottom: "1px solid #111" }}>
+                <div style={{ fontSize: "9px", color: "#555", fontWeight: 700, marginBottom: "5px", letterSpacing: "0.1em" }}>YOU</div>
+                <div style={{ fontSize: "12px", color: "#555" }}>{current.question}</div>
+              </div>
+
+              {/* AI response */}
+              <div style={{ padding: "14px 0", flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+                  <div style={{ fontSize: "9px", color: "#4ade80", fontWeight: 700, letterSpacing: "0.1em" }}>AI</div>
+                  <div style={{ fontSize: "9px", color: "#222", background: "#161616", border: "1px solid #1e1e1e", borderRadius: "4px", padding: "1px 6px" }}>
+                    {phase === "typing" && typedChars < 8 ? (
+                      <span style={{ display: "inline-flex", gap: "3px", padding: "2px 0" }}>
+                        {[0,1,2].map(i => <span key={i} style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#333", display: "inline-block", animation: `blink ${0.8 + i * 0.15}s ease-in-out infinite` }} />)}
+                      </span>
+                    ) : "groq · llama-3.1"}
+                  </div>
+                </div>
+
+                {phase !== "question" && (
+                  <div style={{ fontSize: "12.5px", color: "#555", lineHeight: 1.75 }}>
+                    {renderAnswer()}
+                    {phase === "typing" && typedChars < fullAnswer.length && <span className="cursor" />}
+                  </div>
+                )}
+
+                {codeLines > 0 && (
+                  <div style={{ marginTop: "12px", background: "#0d0d0d", border: "1px solid #161616", borderRadius: "10px", padding: "12px 16px", fontFamily: "monospace", fontSize: "11px", lineHeight: 1.8 }}>
+                    {current.code.slice(0, codeLines).map((line, i) => (
+                      <div key={i} style={{ color: line.startsWith("+") ? "#4ade80" : line.startsWith("-") ? "#f87171" : "#555", animation: "fade-scene 0.2s ease forwards" }}>
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scene indicator dots */}
+        <div style={{ background: "#0a0a0a", borderTop: "1px solid #111", padding: "10px", display: "flex", justifyContent: "center", gap: "6px" }}>
+          {DEMO_SCENARIOS.map((_, i) => (
+            <div key={i} onClick={() => setScene(i)} style={{ width: i === scene ? "18px" : "6px", height: "6px", borderRadius: "99px", background: i === scene ? "#60a5fa" : "#1e1e1e", cursor: "pointer", transition: "all 0.3s ease" }} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -194,64 +407,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Product mockup ────────────────────────────────────────────────── */}
-      <section className="hero-mockup" style={{ maxWidth: "1080px", margin: "0 auto 160px", padding: "0 clamp(20px,4vw,48px)", position: "relative" }}>
-        <div style={{ borderRadius: "20px", border: "1px solid #e8e8e8", overflow: "hidden", background: "#0a0a0a", boxShadow: "0 40px 120px rgba(0,0,0,0.12)" }}>
-          <div style={{ background: "#111", borderBottom: "1px solid #1a1a1a", padding: "14px 18px", display: "flex", alignItems: "center", gap: "8px" }}>
-            {["#3a3a3a","#3a3a3a","#3a3a3a"].map((c,i) => <div key={i} style={{ width: "10px", height: "10px", borderRadius: "50%", background: c }} />)}
-            <div style={{ flex: 1, background: "#1a1a1a", borderRadius: "6px", height: "22px", maxWidth: "220px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: "#444", fontSize: "10px" }}>m-ops.pro/dashboard</span>
-            </div>
-          </div>
-          <div style={{ display: "flex", height: "400px" }}>
-            <div className="hide-mob" style={{ width: "190px", borderRight: "1px solid #141414", padding: "16px 12px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-              {[
-                { label: "Overview", Icon: DashboardCircleIcon, active: false },
-                { label: "Performance", Icon: EyeIcon, active: false },
-                { label: "Incidents", Icon: FlashIcon, active: false },
-                { label: "Code Insights", Icon: ScanIcon, active: false },
-                { label: "Debug with AI", Icon: AiScanIcon, active: true },
-              ].map(({ label, Icon, active }) => (
-                <div key={label} style={{ padding: "8px 10px", borderRadius: "8px", fontSize: "11.5px", fontWeight: active ? 600 : 400, background: active ? "#1a1a1a" : "transparent", color: active ? "#fff" : "#2a2a2a", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Icon size={13} color={active ? "#fff" : "#2a2a2a"} /> {label}
-                </div>
-              ))}
-            </div>
-            <div style={{ flex: 1, padding: "20px 28px", display: "flex", flexDirection: "column", gap: "14px", overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                <div style={{ padding: "4px 10px", borderRadius: "6px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.15)", fontSize: "11px", color: "#f87171", fontWeight: 500, display: "flex", alignItems: "center", gap: "6px" }}>
-                  <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#f87171", animation: "pulse-dot 1.5s ease-in-out infinite" }} /> Service degraded
-                </div>
-                <div style={{ padding: "4px 10px", borderRadius: "6px", background: "#111", border: "1px solid #1a1a1a", fontSize: "11px", color: "#444" }}>my-saas-app</div>
-              </div>
-              <div style={{ display: "flex", gap: "7px", flexWrap: "wrap" }}>
-                {["What's wrong?","Why is it slow?","Security check","Explain this"].map(l => (
-                  <div key={l} style={{ padding: "5px 12px", borderRadius: "7px", background: "#111", border: "1px solid #1a1a1a", fontSize: "10.5px", color: "#3a3a3a" }}>{l}</div>
-                ))}
-              </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                <div style={{ padding: "12px 0", borderBottom: "1px solid #111" }}>
-                  <div style={{ fontSize: "9px", color: "#555", fontWeight: 700, marginBottom: "5px", letterSpacing: "0.1em" }}>YOU</div>
-                  <div style={{ fontSize: "12px", color: "#555" }}>What's causing the slow response times?</div>
-                </div>
-                <div style={{ padding: "14px 0" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                    <div style={{ fontSize: "9px", color: "#4ade80", fontWeight: 700, letterSpacing: "0.1em" }}>AI</div>
-                    <div style={{ fontSize: "9px", color: "#222", background: "#161616", border: "1px solid #1e1e1e", borderRadius: "4px", padding: "1px 6px" }}>groq · llama-3.1</div>
-                  </div>
-                  <div style={{ fontSize: "12.5px", color: "#555", lineHeight: 1.7 }}>
-                    Found the bottleneck in <span style={{ color: "#e8e8e8", background: "#141414", padding: "1px 7px", borderRadius: "4px", fontFamily: "monospace", fontSize: "11.5px" }}>lib/db.ts:47</span> — an N+1 query inside your product loop. Each request triggers <span style={{ color: "#f87171", fontWeight: 500 }}>~140 separate DB calls</span>. Here's the fix:
-                  </div>
-                  <div style={{ marginTop: "12px", background: "#0d0d0d", border: "1px solid #161616", borderRadius: "10px", padding: "12px 16px", fontFamily: "monospace", fontSize: "11px", color: "#555", lineHeight: 1.7 }}>
-                    <span style={{ color: "#4ade80" }}>+</span> <span style={{ color: "#fff", opacity: 0.7 }}>const</span> products = await prisma.product.findMany&#40;&#123;<br />
-                    <span style={{ color: "#4ade80" }}>+</span> {"  "}include: &#123; variants: true, images: true &#125;<br />
-                    <span style={{ color: "#4ade80" }}>+</span> &#125;&#41;
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <DemoMockup />
 
       {/* ── The Problem ───────────────────────────────────────────────────── */}
       <section style={{ background: "#fafafa", borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0" }}>
