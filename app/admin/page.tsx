@@ -365,7 +365,7 @@ export default function AdminPage() {
                           <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 10, marginBottom: i < Math.min(users.length, 5) - 1 ? 10 : 0, borderBottom: i < Math.min(users.length, 5) - 1 ? "1px solid #161616" : "none" }}>
                             {u.image
                               ? <img src={u.image} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
-                              : <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center" }}><UserIcon size={12} color="#444" /></div>}
+                              : <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#666" }}>{(u.name || u.email || "?")[0].toUpperCase()}</div>}
                             <div style={{ flex: 1 }}>
                               <p style={{ fontSize: 12.5, color: "#e8e8e8" }}>{u.name || u.email}</p>
                               {u.name && <p style={{ fontSize: 11.5, color: "#444" }}>{u.email}</p>}
@@ -422,7 +422,7 @@ export default function AdminPage() {
                             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 18px", cursor: "pointer" }} onClick={() => setExpandedId(isExpanded ? null : u.id)}>
                               {u.image
                                 ? <img src={u.image} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-                                : <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><UserIcon size={14} color="#444" /></div>}
+                                : <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 12, fontWeight: 700, color: "#666" }}>{(u.name || u.email || "?")[0].toUpperCase()}</div>}
 
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
