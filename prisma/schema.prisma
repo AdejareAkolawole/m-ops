@@ -32,7 +32,7 @@ model User {
   projects             Project[]
   passwordResetTokens  PasswordResetToken[]
   teamMembers          TeamMember[]         @relation("TeamOwner")
-  onCallSchedules      OnCallSchedule[]
+  supportCalls         SupportCall[]
 }
 
 model Project {
@@ -98,17 +98,18 @@ model TeamMember {
   @@unique([ownerId, email])
 }
 
-model OnCallSchedule {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  email     String
-  startHour Int      @default(0)
-  endHour   Int      @default(23)
-  days      String   @default("0,1,2,3,4,5,6")
-  timezone  String   @default("UTC")
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model SupportCall {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  email       String
+  topic       String
+  description String?
+  preferredAt DateTime
+  timezone    String   @default("UTC")
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

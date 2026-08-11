@@ -21,7 +21,7 @@ import {
   AddCircleIcon,
 } from "hugeicons-react"
 
-type Tab = "profile" | "security" | "notifications" | "alerts" | "billing" | "team" | "oncall"
+type Tab = "profile" | "security" | "notifications" | "alerts" | "billing" | "team" | "support"
 
 const S = {
   page: { minHeight: "100vh", background: "#090909", color: "#e8e8e8", fontFamily: "inherit" } as React.CSSProperties,
@@ -125,14 +125,13 @@ export default function SettingsPage() {
   const [inviteName, setInviteName] = useState("")
   const [teamLoading, setTeamLoading] = useState(false)
 
-  // On-call
-  const [schedules, setSchedules] = useState<{ id: string; name: string; email: string; startHour: number; endHour: number; days: string; timezone: string }[]>([])
-  const [ocName, setOcName] = useState("")
-  const [ocEmail, setOcEmail] = useState("")
-  const [ocStart, setOcStart] = useState(9)
-  const [ocEnd, setOcEnd] = useState(17)
-  const [ocDays, setOcDays] = useState("1,2,3,4,5")
-  const [ocLoading, setOcLoading] = useState(false)
+  // Support calls
+  const [supportCalls, setSupportCalls] = useState<{ id: string; topic: string; description?: string; preferredAt: string; status: string }[]>([])
+  const [callTopic, setCallTopic] = useState("")
+  const [callDesc, setCallDesc] = useState("")
+  const [callDate, setCallDate] = useState("")
+  const [callTime, setCallTime] = useState("10:00")
+  const [callLoading, setCallLoading] = useState(false)
 
   useEffect(() => {
     if (session?.user) {
@@ -161,7 +160,7 @@ export default function SettingsPage() {
     if (params.get("slack") === "error") { showToast("error", "Slack connection failed. Try again."); window.history.replaceState({}, "", "/settings?tab=alerts") }
     if (params.get("tab")) setTab(params.get("tab") as Tab)
     fetch("/api/team").then(r => r.json()).then(d => { if (Array.isArray(d)) setTeamMembers(d) }).catch(() => {})
-    fetch("/api/oncall").then(r => r.json()).then(d => { if (Array.isArray(d)) setSchedules(d) }).catch(() => {})
+    fetch("/api/support/book").then(r => r.json()).then(d => { if (Array.isArray(d)) setSupportCalls(d) }).catch(() => {})
   }, [])
 
   function showToast(type: "success" | "error", message: string) {
@@ -271,22 +270,29 @@ export default function SettingsPage() {
     setTeamMembers(prev => prev.filter(m => m.id !== id))
   }
 
-  async function addSchedule() {
-    if (!ocName || !ocEmail) return
-    setOcLoading(true)
+  async function bookCall() {
+    if (!callTopic || !callDate) return
+    setCallLoading(true)
     try {
-      const res = await fetch("/api/oncall", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: ocName, email: ocEmail, startHour: ocStart, endHour: ocEnd, days: ocDays }) })
+      const preferredAt = new Date(`${callDate}T${callTime}`).toISOString()
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const res = await fetch("/api/support/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: callTopic, description: callDesc, preferredAt, timezone }),
+      })
       const d = await res.json()
-      if (!res.ok) return showToast("error", d.message || d.error || "Failed")
-      setSchedules(prev => [...prev, d])
-      setOcName(""); setOcEmail("")
-      showToast("success", "Schedule added")
-    } finally { setOcLoading(false) }
+      if (!res.ok) return showToast("error", d.message || d.error || "Failed to book")
+      setSupportCalls(prev => [...prev, d])
+      setCallTopic(""); setCallDesc(""); setCallDate(""); setCallTime("10:00")
+      showToast("success", "Call request sent! We'll confirm shortly.")
+    } finally { setCallLoading(false) }
   }
 
-  async function removeSchedule(id: string) {
-    await fetch("/api/oncall", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
-    setSchedules(prev => prev.filter(s => s.id !== id))
+  async function cancelCall(id: string) {
+    await fetch("/api/support/book", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+    setSupportCalls(prev => prev.filter(c => c.id !== id))
+    showToast("success", "Call request cancelled")
   }
 
   async function deleteAccount() {
@@ -345,7 +351,7 @@ export default function SettingsPage() {
             <TabButton active={tab === "notifications"} onClick={() => setTab("notifications")} icon={<Notification01Icon size={14} />} label="Notifications" />
             <TabButton active={tab === "alerts"} onClick={() => setTab("alerts")} icon={<Mail01Icon size={14} />} label="Alerts" />
             {(plan === "team") && <TabButton active={tab === "team"} onClick={() => setTab("team")} icon={<UserGroupIcon size={14} />} label="Team" />}
-            {(plan === "team") && <TabButton active={tab === "oncall"} onClick={() => setTab("oncall")} icon={<Clock01Icon size={14} />} label="On-call" />}
+            {(plan === "team") && <TabButton active={tab === "support"} onClick={() => setTab("support")} icon={<Clock01Icon size={14} />} label="Book a call" />}
             <TabButton active={tab === "billing"} onClick={() => setTab("billing")} icon={<CreditCardIcon size={14} />} label="Billing" />
           </div>
 
@@ -679,50 +685,105 @@ export default function SettingsPage() {
               </>
             )}
 
-            {tab === "oncall" && (
+            {tab === "support" && (
               <>
-                <div style={S.card} className="settings-card">
-                  <p style={S.cardTitle}>On-call schedules</p>
-                  <p style={S.cardDesc}>Define who gets paged during specific hours. Alerts route to the on-call contact first.</p>
-                  {schedules.map(s => {
-                    const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
-                    const dayLabels = s.days.split(",").map(d => dayNames[Number(d)]).join(", ")
-                    return (
-                      <div key={s.id} style={{ padding: "12px 0", borderBottom: "1px solid #161616", display: "flex", alignItems: "center", gap: 10 }}>
-                        <Clock01Icon size={14} color="#a5b4fc" />
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: 12.5, fontWeight: 600, color: "#e8e8e8", margin: 0 }}>{s.name}</p>
-                          <p style={{ fontSize: 11.5, color: "#555", margin: 0 }}>{s.email} · {s.startHour}:00–{s.endHour}:00 · {dayLabels}</p>
-                        </div>
-                        <button onClick={() => removeSchedule(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", padding: 4 }}><Delete02Icon size={13} /></button>
-                      </div>
-                    )
-                  })}
-                  {schedules.length === 0 && <p style={{ fontSize: 12.5, color: "#333", marginBottom: 16 }}>No schedules yet.</p>}
-                  <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 10, padding: 16, marginTop: 16 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: "#888", marginBottom: 12 }}>Add schedule</p>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                      <input style={{ ...S.input, flex: 1, minWidth: 120 }} value={ocName} onChange={e => setOcName(e.target.value)} placeholder="Name" />
-                      <input style={{ ...S.input, flex: 2, minWidth: 180 }} type="email" value={ocEmail} onChange={e => setOcEmail(e.target.value)} placeholder="Alert email" />
+                {/* Header */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "#0d1a2e", border: "1px solid #1a3050", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="#60a5fa" strokeWidth="1.5"/><path d="M8 2v4M16 2v4M3 10h18" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round"/></svg>
                     </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                      <div style={{ flex: 1, minWidth: 80 }}>
-                        <label style={S.label}>Start hour (24h)</label>
-                        <input type="number" min={0} max={23} style={S.input} value={ocStart} onChange={e => setOcStart(Number(e.target.value))} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 80 }}>
-                        <label style={S.label}>End hour (24h)</label>
-                        <input type="number" min={0} max={23} style={S.input} value={ocEnd} onChange={e => setOcEnd(Number(e.target.value))} />
-                      </div>
-                      <div style={{ flex: 2, minWidth: 140 }}>
-                        <label style={S.label}>Days (0=Sun … 6=Sat, comma-separated)</label>
-                        <input style={S.input} value={ocDays} onChange={e => setOcDays(e.target.value)} placeholder="1,2,3,4,5" />
-                      </div>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: "#e8e8e8", margin: 0 }}>Book a support call</p>
+                      <p style={{ fontSize: 12, color: "#444", margin: 0 }}>Google Meet · Dedicated support for Team plan</p>
                     </div>
-                    <button onClick={addSchedule} disabled={ocLoading || !ocName || !ocEmail} style={{ ...S.btn, background: "#e8e8e8", color: "#000" }}>
-                      {ocLoading ? "Adding…" : "Add schedule"}
-                    </button>
                   </div>
+                </div>
+
+                {/* Book form */}
+                <div style={S.card} className="settings-card">
+                  <p style={S.cardTitle}>Request a call</p>
+                  <p style={S.cardDesc}>Tell us what you need help with and pick a preferred time. We'll send a Google Meet link to your email.</p>
+
+                  <div style={S.row}>
+                    <label style={S.label}>What do you need help with?</label>
+                    <select style={{ ...S.input, cursor: "pointer" }} value={callTopic} onChange={e => setCallTopic(e.target.value)}>
+                      <option value="">Select a topic…</option>
+                      <option value="Onboarding & setup">Onboarding & setup</option>
+                      <option value="Monitoring configuration">Monitoring configuration</option>
+                      <option value="Alert integrations (Slack, PagerDuty)">Alert integrations (Slack, PagerDuty)</option>
+                      <option value="Incident review">Incident review</option>
+                      <option value="SLA & reporting">SLA & reporting</option>
+                      <option value="Billing & account">Billing & account</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div style={S.row}>
+                    <label style={S.label}>Additional details (optional)</label>
+                    <textarea
+                      style={{ ...S.input, height: 80, resize: "vertical" as const, lineHeight: 1.5 }}
+                      value={callDesc}
+                      onChange={e => setCallDesc(e.target.value)}
+                      placeholder="Describe what you're running into…"
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <label style={S.label}>Preferred date</label>
+                      <input type="date" style={S.input} value={callDate} min={new Date().toISOString().split("T")[0]} onChange={e => setCallDate(e.target.value)} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                      <label style={S.label}>Preferred time</label>
+                      <input type="time" style={S.input} value={callTime} onChange={e => setCallTime(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={bookCall}
+                    disabled={callLoading || !callTopic || !callDate}
+                    style={{ ...S.btn, background: callTopic && callDate ? "#e8e8e8" : "#1a1a1a", color: callTopic && callDate ? "#000" : "#444", border: "1px solid #222", display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 10l5-5m0 0h-4m4 0v4M9 14l-5 5m0 0h4m-4 0v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                    {callLoading ? "Sending request…" : "Request call"}
+                  </button>
+                </div>
+
+                {/* Upcoming calls */}
+                {supportCalls.length > 0 && (
+                  <div style={S.card} className="settings-card">
+                    <p style={S.cardTitle}>Your requests</p>
+                    {supportCalls.map(c => {
+                      const dt = new Date(c.preferredAt)
+                      const isPast = dt < new Date()
+                      return (
+                        <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid #161616" }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 8, background: "#0d0d0d", border: "1px solid #1c1c1c", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <span style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{dt.toLocaleString("en", { month: "short" })}</span>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: "#e8e8e8", lineHeight: 1 }}>{dt.getDate()}</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 12.5, fontWeight: 600, color: "#e8e8e8", margin: 0 }}>{c.topic}</p>
+                            <p style={{ fontSize: 11.5, color: "#444", margin: 0 }}>{dt.toLocaleString("en", { hour: "2-digit", minute: "2-digit", weekday: "short" })}</p>
+                          </div>
+                          <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 600,
+                            background: c.status === "confirmed" ? "#0d2a1a" : isPast ? "#1a1a1a" : "#1a1a0d",
+                            color: c.status === "confirmed" ? "#4ade80" : isPast ? "#444" : "#fbbf24",
+                            border: `1px solid ${c.status === "confirmed" ? "#1a4a2a" : isPast ? "#222" : "#3a3000"}`,
+                          }}>{c.status === "confirmed" ? "Confirmed" : isPast ? "Past" : "Pending"}</span>
+                          {!isPast && c.status !== "confirmed" && (
+                            <button onClick={() => cancelCall(c.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#555", padding: 4, fontSize: 11 }}>Cancel</button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div style={{ padding: "12px 0", fontSize: 12, color: "#333", display: "flex", alignItems: "center", gap: 8 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#444" strokeWidth="1.5"/><path d="M12 8v4l3 3" stroke="#444" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  We typically confirm within a few hours and send a Google Meet link to your account email.
                 </div>
               </>
             )}
