@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { sendFeedbackAlert } from "@/lib/email"
 
 export async function GET() {
   const session = await auth()
@@ -27,28 +28,7 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Email notification (non-blocking)
-  const resendKey = process.env.RESEND_API_KEY
-  if (resendKey) {
-    const from = session?.user?.email ?? "anonymous"
-    fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
-      body: JSON.stringify({
-        from: "m-ops feedback <alerts@m-ops.pro>",
-        to: ["adejare.akolawole@gmail.com"],
-        reply_to: session?.user?.email ?? undefined,
-        subject: `[m-ops ${type}] ${title}`,
-        html: `<div style="font-family:sans-serif;max-width:500px">
-          <h2>New ${type} report</h2>
-          <p><strong>From:</strong> ${from}</p>
-          <p><strong>Title:</strong> ${title}</p>
-          ${description ? `<p><strong>Details:</strong></p><p style="color:#555">${description}</p>` : ""}
-          <p style="color:#aaa;font-size:12px">View all feedback at m-ops.pro/admin</p>
-        </div>`,
-      }),
-    }).catch(() => {})
-  }
+  sendFeedbackAlert(type, title, description || null, session?.user?.email ?? null).catch(() => {})
 
   return NextResponse.json(item)
 }

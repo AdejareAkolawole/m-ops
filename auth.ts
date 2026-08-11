@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { authConfig } from "@/auth.config"
+import { sendWelcomeEmail, sendNewUserAlert } from "@/lib/email"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -68,6 +69,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token?.id) session.user.id = token.id as string
       if (token?.githubToken) (session as any).githubToken = token.githubToken
       return session
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      // Fires on first OAuth sign-in (GitHub) — credentials signup handled in /api/auth/signup
+      sendWelcomeEmail(user.email!, user.name ?? null).catch(() => {})
+      sendNewUserAlert(user.name ?? null, user.email ?? null).catch(() => {})
     },
   },
 })

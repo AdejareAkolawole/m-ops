@@ -1,17 +1,20 @@
 "use client"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { signInWithGitHub } from "./actions"
 import { GitHubSubmitButton, Spinner } from "@/components/AuthLoader"
 
-export default function LoginPage() {
+function LoginInner() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const params = useSearchParams()
+  const verified = params.get("verified") === "1"
+  const tokenExpired = params.get("error") === "token_expired"
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,6 +36,17 @@ export default function LoginPage() {
           <span style={{ color: "#fff", fontSize: "22px", fontWeight: 800, letterSpacing: "-0.05em" }}>m-ops</span>
           <p style={{ color: "#444", fontSize: "13.5px", margin: 0 }}>Sign in to your workspace</p>
         </div>
+
+        {verified && (
+          <div style={{ background: "#051a10", border: "1px solid #0a3020", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", color: "#4ade80", fontSize: "13px" }}>
+            ✓ Email verified! You can now sign in.
+          </div>
+        )}
+        {tokenExpired && (
+          <div style={{ background: "#1a0a0a", border: "1px solid #3a1a1a", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", color: "#f87171", fontSize: "13px" }}>
+            Verification link expired. Please sign up again.
+          </div>
+        )}
 
         <form action={signInWithGitHub}>
           <GitHubSubmitButton />
@@ -85,5 +99,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   )
 }
