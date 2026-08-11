@@ -31,6 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           scope: "read:user user:email repo",
         },
       },
+      checks: ["state"],
     }),
     Credentials({
       name: "credentials",
