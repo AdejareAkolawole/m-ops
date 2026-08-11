@@ -45,6 +45,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) token.id = user.id
       if (account?.provider === "github" && account.access_token) {
         token.githubToken = account.access_token
+        // PrismaAdapter doesn't update access_token on repeat sign-ins — do it explicitly
+        await prisma.account.updateMany({
+          where: { userId: user?.id ?? token.id as string, provider: "github" },
+          data: { access_token: account.access_token },
+        })
       }
       return token
     },
