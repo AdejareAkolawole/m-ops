@@ -47,6 +47,7 @@ import { ManualProjectDetail } from "@/components/ManualProjectDetail"
 import { AddProjectModal } from "@/components/AddProjectModal"
 import { MonitoringDashboard } from "@/components/MonitoringDashboard"
 import { getGitHubAccount } from "@/lib/store"
+import { Spinner } from "@/components/AuthLoader"
 import {
   DashboardCircleIcon,
   ArrowReloadHorizontalIcon,
@@ -93,6 +94,7 @@ export default function Home() {
   const [uptime, setUptime] = useState<Record<string, UptimeResult>>({})
   const uptimeRef = useRef<Record<string, UptimeResult>>({})
   const [connectingProvider, setConnectingProvider] = useState<HostingProvider | null>(null)
+  const [signingOut, setSigningOut] = useState(false)
   const [toasts, setToasts] = useState<ToastEvent[]>([])
   const prevStatusRef = useRef<Record<string, boolean | undefined>>({})
 
@@ -404,8 +406,13 @@ export default function Home() {
                         <Shield01Icon size={11} /> Admin
                       </a>
                     )}
-                    <button onClick={() => signOut({ callbackUrl: "/" })} style={{ fontSize: "11.5px", color: "#333", background: "none", border: "none", cursor: "pointer", padding: "2px 4px" }}>
-                      Sign out
+                    <button
+                      onClick={async () => { setSigningOut(true); await signOut({ callbackUrl: "/" }) }}
+                      disabled={signingOut}
+                      style={{ fontSize: "11.5px", color: "#333", background: "none", border: "none", cursor: signingOut ? "not-allowed" : "pointer", padding: "2px 4px", display: "flex", alignItems: "center", gap: "5px", opacity: signingOut ? 0.5 : 1 }}
+                    >
+                      {signingOut && <Spinner size={11} color="#555" />}
+                      {signingOut ? "Signing out..." : "Sign out"}
                     </button>
                   </div>
                 )}
