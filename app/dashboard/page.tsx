@@ -43,6 +43,8 @@ import { Sidebar } from "@/components/Sidebar"
 import { ManualProjectDetail } from "@/components/ManualProjectDetail"
 import { AddProjectModal } from "@/components/AddProjectModal"
 import { MonitoringDashboard } from "@/components/MonitoringDashboard"
+import { Onboarding } from "@/components/Onboarding"
+import { HelpButton } from "@/components/HelpButton"
 import { getGitHubAccount } from "@/lib/store"
 import { Spinner } from "@/components/AuthLoader"
 import {
@@ -566,6 +568,14 @@ export default function Home() {
           </div>
         </div>
       )}
+      <Onboarding
+        onAddProject={() => setShowAddProject(true)}
+        onGoToAlerts={() => { window.location.href = "/settings?tab=alerts" }}
+      />
+      <HelpButton
+        onAddProject={() => setShowAddProject(true)}
+        plan={userPlan}
+      />
       {connectingProvider && (
         <ConnectProvider
           provider={connectingProvider}

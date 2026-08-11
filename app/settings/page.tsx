@@ -271,10 +271,12 @@ export default function SettingsPage() {
   }
 
   async function bookCall() {
-    if (!callTopic || !callDate) return
+    if (!callTopic) return
     setCallLoading(true)
     try {
-      const preferredAt = new Date(`${callDate}T${callTime}`).toISOString()
+      // Open Google Meet immediately
+      const meetWindow = window.open("https://meet.google.com/new", "_blank", "width=900,height=700")
+      const preferredAt = callDate ? new Date(`${callDate}T${callTime}`).toISOString() : new Date().toISOString()
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
       const res = await fetch("/api/support/book", {
         method: "POST",
@@ -282,10 +284,10 @@ export default function SettingsPage() {
         body: JSON.stringify({ topic: callTopic, description: callDesc, preferredAt, timezone }),
       })
       const d = await res.json()
-      if (!res.ok) return showToast("error", d.message || d.error || "Failed to book")
+      if (!res.ok) { meetWindow?.close(); return showToast("error", d.message || d.error || "Failed") }
       setSupportCalls(prev => [...prev, d])
       setCallTopic(""); setCallDesc(""); setCallDate(""); setCallTime("10:00")
-      showToast("success", "Call request sent! We'll confirm shortly.")
+      showToast("success", "Google Meet opened! Share the link with support.")
     } finally { setCallLoading(false) }
   }
 
@@ -742,12 +744,13 @@ export default function SettingsPage() {
 
                   <button
                     onClick={bookCall}
-                    disabled={callLoading || !callTopic || !callDate}
-                    style={{ ...S.btn, background: callTopic && callDate ? "#e8e8e8" : "#1a1a1a", color: callTopic && callDate ? "#000" : "#444", border: "1px solid #222", display: "flex", alignItems: "center", gap: 8 }}
+                    disabled={callLoading || !callTopic}
+                    style={{ ...S.btn, background: callTopic ? "#1a73e8" : "#1a1a1a", color: callTopic ? "#fff" : "#444", border: "none", display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 13, fontWeight: 700, borderRadius: 10, cursor: callTopic ? "pointer" : "not-allowed" }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 10l5-5m0 0h-4m4 0v4M9 14l-5 5m0 0h4m-4 0v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                    {callLoading ? "Sending request…" : "Request call"}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z" fill="currentColor"/></svg>
+                    {callLoading ? "Opening Meet…" : "Start Google Meet"}
                   </button>
+                  <p style={{ fontSize: 11.5, color: "#444", marginTop: 10 }}>Opens Google Meet instantly — share the link with us in the chat below.</p>
                 </div>
 
                 {/* Upcoming calls */}
