@@ -96,7 +96,12 @@ export function DebugTab({ project, lastCheck }: Props) {
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Request failed")
+      if (!res.ok) {
+        const msg = data.error === "plan_required"
+          ? "AI debugging requires a Pro or Team plan. Upgrade in Settings → Billing."
+          : (data.message || data.error || "Request failed")
+        throw new Error(msg)
+      }
 
       setMessages(prev => prev.map(m =>
         m.loading ? { ...m, content: data.content, loading: false, provider: data.provider } : m

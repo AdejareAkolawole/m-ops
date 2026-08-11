@@ -111,7 +111,12 @@ export function InsightsTab({ projectId, projectName, onTabChange }: Props) {
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Analysis failed")
+      if (!res.ok) {
+        const msg = data.error === "plan_required"
+          ? "Code Insights requires a Pro or Team plan. Upgrade in Settings → Billing."
+          : (data.message || data.error || "Analysis failed")
+        throw new Error(msg)
+      }
 
       const result: AnalysisResult = {
         projectId,

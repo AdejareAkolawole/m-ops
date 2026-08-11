@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/auth"
+import { prisma } from "@/lib/prisma"
+import { hasCodeInsights } from "@/lib/plans"
 import Groq from "groq-sdk"
 
 
@@ -33,6 +36,17 @@ async function getRepoTree(token: string, owner: string, repo: string, branch: s
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } })
+  if (!user || !hasCodeInsights(user.plan)) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Code Insights requires a Pro or Team plan. Upgrade in Settings → Billing." },
+      { status: 403 }
+    )
+  }
+
   const { token, owner, repo, branch = "main" } = await req.json()
   if (!token || !owner || !repo) return NextResponse.json({ error: "token, owner, repo required" }, { status: 400 })
 

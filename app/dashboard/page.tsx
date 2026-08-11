@@ -7,7 +7,7 @@ import {
   updateVercelProject, clearVercelAccount,
   getVercelSelectedIds, saveVercelSelectedIds, clearVercelSelectedIds,
   getChecks, getAllChecks, saveProviderProjects,
-  saveGitHubAccount,
+  saveGitHubAccount, savePlanCache,
 } from "@/lib/store"
 import type { ManualProject } from "@/lib/types"
 
@@ -88,6 +88,7 @@ export default function Home() {
   const [refreshingId, setRefreshingId] = useState<string | null>(null)
   const [vercelConnected, setVercelConnected] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
   const [allVercelProjects, setAllVercelProjects] = useState<VercelSyncedProject[]>([])
   const [selectedVercelIds, setSelectedVercelIds] = useState<string[]>([])
@@ -205,7 +206,15 @@ export default function Home() {
     }
   }, [])
 
-  // Auto-ping all projects on mount + every 60s
+  // Auto-ping all projects — interval is plan-based (30s Pro/Team, 300s Free)
+  const [checkIntervalMs, setCheckIntervalMs] = useState(60_000)
+  useEffect(() => {
+    fetch("/api/user/plan-config").then(r => r.json()).then(d => {
+      if (d.config?.checkIntervalSec) setCheckIntervalMs(d.config.checkIntervalSec * 1000)
+      if (d.plan && d.config?.historyDays) savePlanCache(d.plan, d.config.historyDays)
+    }).catch(() => {})
+  }, [])
+
   useEffect(() => {
     if (!mounted) return
 
@@ -221,9 +230,9 @@ export default function Home() {
     }
 
     pingAll()
-    const interval = setInterval(pingAll, 60_000)
+    const interval = setInterval(pingAll, checkIntervalMs)
     return () => clearInterval(interval)
-  }, [mounted, checkUptime, manualProjects])
+  }, [mounted, checkUptime, manualProjects, checkIntervalMs])
 
   function handleVercelConnected(ps: VercelSyncedProject[]) {
     setAllVercelProjects(ps)
@@ -479,17 +488,49 @@ export default function Home() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ name: p.name, url: p.url, type: "manual", metadata: manualMeta(p) }),
             })
-            if (res.ok) {
-              const saved = await res.json()
-              const mp = dbToManual(saved)
-              setManualProjects(prev => [mp, ...prev])
-              checkUptime(mp.id, mp.url)
+            if (!res.ok) {
+              const err = await res.json()
+              if (err.error === "plan_limit") {
+                setShowAddProject(false)
+                setShowUpgradeModal(true)
+              }
+              return
             }
+            const saved = await res.json()
+            const mp = dbToManual(saved)
+            setManualProjects(prev => [mp, ...prev])
+            checkUptime(mp.id, mp.url)
             setShowAddProject(false)
           }}
           onConnectVercel={() => { setShowAddProject(false); setShowConnect(true) }}
           onConnectProvider={(p) => { setShowAddProject(false); setConnectingProvider(p) }}
         />
+      )}
+      {showUpgradeModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 16, width: "100%", maxWidth: 420, padding: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#1e1b4b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <RocketIcon size={16} color="#a5b4fc" />
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#e8e8e8", margin: 0 }}>Project limit reached</p>
+                <p style={{ fontSize: 12, color: "#444", margin: 0 }}>Free plan is limited to 3 projects</p>
+              </div>
+            </div>
+            <p style={{ fontSize: 13, color: "#555", lineHeight: 1.65, marginBottom: 24 }}>
+              Upgrade to <strong style={{ color: "#a5b4fc" }}>Pro</strong> for unlimited projects, 30-second monitoring intervals, AI debugging, and Code Insights — all for $2/month.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <a href="/settings#billing" style={{ flex: 1, display: "block", textAlign: "center", background: "#e8e8e8", color: "#000", fontWeight: 700, fontSize: 13, padding: "10px 0", borderRadius: 10, textDecoration: "none" }}>
+                Upgrade to Pro →
+              </a>
+              <button onClick={() => setShowUpgradeModal(false)} style={{ padding: "10px 18px", borderRadius: 10, fontSize: 13, background: "#1a1a1a", color: "#555", border: "1px solid #222", cursor: "pointer" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {connectingProvider && (
         <ConnectProvider

@@ -16,11 +16,11 @@ export async function GET() {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, name: true, email: true, image: true,
+      id: true, name: true, email: true, image: true, plan: true,
       emailVerified: true, createdAt: true, updatedAt: true,
       accounts: { select: { provider: true, type: true } },
       sessions: { select: { id: true, expires: true }, orderBy: { expires: "desc" } },
-      _count: { select: { sessions: true, accounts: true } },
+      _count: { select: { sessions: true, accounts: true, projects: true } },
     },
   })
   return NextResponse.json(users)
@@ -28,19 +28,20 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   const denied = await guard(); if (denied) return denied
-  const { id, name, email, password } = await req.json()
+  const { id, name, email, password, plan } = await req.json()
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
 
   const data: Record<string, unknown> = {}
   if (name !== undefined) data.name = name || null
   if (email) data.email = email
+  if (plan && ["free", "pro", "team"].includes(plan)) data.plan = plan
 
   if (password) {
     if (password.length < 8) return NextResponse.json({ error: "Password must be at least 8 chars" }, { status: 400 })
     data.password = await bcrypt.hash(password, 12)
   }
 
-  const user = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true } })
+  const user = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true, plan: true } })
   return NextResponse.json(user)
 }
 

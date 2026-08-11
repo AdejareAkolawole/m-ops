@@ -14,10 +14,25 @@ const ADMIN_EMAIL = "adejare.akolawole@gmail.com"
 
 interface UserRow {
   id: string; name: string | null; email: string; image: string | null
+  plan: string
   emailVerified: string | null; createdAt: string; updatedAt: string
   accounts: { provider: string }[]
   sessions: { id: string; expires: string }[]
-  _count: { sessions: number; accounts: number }
+  _count: { sessions: number; accounts: number; projects: number }
+}
+
+function PlanBadge({ plan }: { plan: string }) {
+  const colors: Record<string, { bg: string; color: string; border: string }> = {
+    free:  { bg: "#1a1a1a",   color: "#555",   border: "#222" },
+    pro:   { bg: "#1e1b4b",   color: "#a5b4fc", border: "#312e81" },
+    team:  { bg: "#0d2818",   color: "#4ade80", border: "#14532d" },
+  }
+  const c = colors[plan] ?? colors.free
+  return (
+    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", padding: "2px 8px", borderRadius: 99, background: c.bg, color: c.color, border: `1px solid ${c.border}`, textTransform: "uppercase" }}>
+      {plan}
+    </span>
+  )
 }
 interface SessionRow {
   id: string; sessionToken: string; userId: string; expires: string
@@ -91,6 +106,7 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
   const [editEmail, setEditEmail] = useState("")
+  const [editPlan, setEditPlan] = useState("free")
   const [editLoading, setEditLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [resetId, setResetId] = useState<string | null>(null)
@@ -137,10 +153,10 @@ export default function AdminPage() {
   async function saveEdit(id: string) {
     setEditLoading(true)
     try {
-      const res = await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, name: editName, email: editEmail }) })
+      const res = await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, name: editName, email: editEmail, plan: editPlan }) })
       const data = await res.json()
       if (!res.ok) return err(data.error || "Failed to update")
-      setUsers(u => u.map(x => x.id === id ? { ...x, name: data.name, email: data.email } : x))
+      setUsers(u => u.map(x => x.id === id ? { ...x, name: data.name, email: data.email, plan: data.plan } : x))
       setEditingId(null); ok("User updated")
     } finally { setEditLoading(false) }
   }
@@ -391,6 +407,10 @@ export default function AdminPage() {
                                 {(!providers.length || providers.includes("credentials")) && <span style={{ fontSize: 10.5, background: "#161616", color: "#555", padding: "2px 7px", borderRadius: 5, border: "1px solid #1e1e1e" }}>pw</span>}
                               </div>
 
+                              <PlanBadge plan={u.plan || "free"} />
+
+                              <span style={{ fontSize: 11, color: "#333", whiteSpace: "nowrap" }}>{u._count.projects ?? 0} proj</span>
+
                               <span style={{ fontSize: 11, color: "#2a2a2a", whiteSpace: "nowrap" }}>{fmtDate(u.createdAt)}</span>
 
                               {u._count.sessions > 0 && (
@@ -409,6 +429,16 @@ export default function AdminPage() {
                                     <input style={inputStyle} value={editName} onChange={e => setEditName(e.target.value)} placeholder="Name" />
                                     <label style={labelStyle}>Email</label>
                                     <input style={inputStyle} value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="Email" type="email" />
+                                    <label style={labelStyle}>Plan</label>
+                                    <select
+                                      value={editPlan}
+                                      onChange={e => setEditPlan(e.target.value)}
+                                      style={{ ...inputStyle, cursor: "pointer", appearance: "none" as const }}
+                                    >
+                                      <option value="free">Free</option>
+                                      <option value="pro">Pro ($2/mo)</option>
+                                      <option value="team">Team ($5/mo)</option>
+                                    </select>
                                     <div style={{ display: "flex", gap: 8 }}>
                                       <button onClick={() => saveEdit(u.id)} disabled={editLoading} style={btnPrimary}>{editLoading ? "Saving…" : "Save"}</button>
                                       <button onClick={() => setEditingId(null)} style={btnGhost}>Cancel</button>
@@ -435,7 +465,7 @@ export default function AdminPage() {
                                     </div>
 
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                      <button onClick={() => { setEditingId(u.id); setEditName(u.name || ""); setEditEmail(u.email) }} style={{ ...btnGhost, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                                      <button onClick={() => { setEditingId(u.id); setEditName(u.name || ""); setEditEmail(u.email); setEditPlan(u.plan || "free") }} style={{ ...btnGhost, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
                                         <PencilEdit02Icon size={12} /> Edit profile
                                       </button>
                                       <button onClick={() => { setResetId(u.id); setResetPw("") }} style={{ ...btnGhost, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>

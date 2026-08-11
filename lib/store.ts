@@ -5,6 +5,20 @@ const CHECKS_KEY = "hub_checks_v2"
 const VERCEL_ACCOUNT_KEY = "hub_vercel_account"
 const VERCEL_PROJECTS_KEY = "hub_vercel_projects"
 const VERCEL_SELECTED_KEY = "hub_vercel_selected"
+const PLAN_CACHE_KEY = "hub_plan_cache"
+
+export function savePlanCache(plan: string, historyDays: number) {
+  if (typeof window === "undefined") return
+  localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify({ plan, historyDays }))
+}
+
+function getHistoryDays(): number {
+  if (typeof window === "undefined") return 7
+  try {
+    const raw = localStorage.getItem(PLAN_CACHE_KEY)
+    return raw ? (JSON.parse(raw).historyDays ?? 7) : 7
+  } catch { return 7 }
+}
 
 // ── Vercel account ────────────────────────────────────────────────────────────
 
@@ -74,8 +88,11 @@ export function getChecks(projectId: string): CheckResult[] {
 }
 
 export function pushCheck(projectId: string, check: CheckResult) {
+  const historyDays = getHistoryDays()
   const all = getAllChecks()
-  all[projectId] = [check, ...(all[projectId] || [])].slice(0, 100)
+  const cutoff = Date.now() - historyDays * 86_400_000
+  const prev = (all[projectId] || []).filter(c => new Date(c.timestamp).getTime() > cutoff)
+  all[projectId] = [check, ...prev].slice(0, 2_000)
   localStorage.setItem(CHECKS_KEY, JSON.stringify(all))
 }
 
