@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     siteName: "m-ops",
     title: "m-ops — Full-Stack Developer Ops",
     description: "Monitor deployments, debug with AI, track SLA, get Slack alerts. The ops platform built for developers who ship.",
-    images: [{ url: "/og.svg", width: 1200, height: 630, alt: "m-ops — Full-Stack Developer Ops" }],
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "m-ops — Full-Stack Developer Ops" }],
     url: "https://m-ops.pro",
   },
   twitter: {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     site: "@mopspro",
     title: "m-ops — Full-Stack Developer Ops",
     description: "Monitor deployments. Debug with AI. Track SLA. Get Slack alerts. Built for developers who ship fast.",
-    images: ["/og.svg"],
+    images: ["/api/og"],
   },
   metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3005"),
 }
