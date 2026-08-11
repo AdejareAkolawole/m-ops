@@ -21,6 +21,8 @@ model User {
   notifyIncidents      Boolean              @default(true)
   notifyWeeklyReport   Boolean              @default(false)
   slackWebhookUrl      String?
+  slackChannelName     String?
+  slackTeamName        String?
   pagerdutyKey         String?
   customIntervalSec    Int?
   createdAt            DateTime             @default(now())

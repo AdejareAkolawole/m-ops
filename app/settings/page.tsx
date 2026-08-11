@@ -110,10 +110,14 @@ export default function SettingsPage() {
   const [billingLoading, setBillingLoading] = useState<string | null>(null)
 
   // Alerts
-  const [slackWebhook, setSlackWebhook] = useState("")
+  const [slackConnected, setSlackConnected] = useState(false)
+  const [slackChannel, setSlackChannel] = useState("")
+  const [slackTeam, setSlackTeam] = useState("")
+  const [slackDisconnecting, setSlackDisconnecting] = useState(false)
   const [pagerdutyKey, setPagerdutyKey] = useState("")
+  const [pdSaving, setPdSaving] = useState(false)
   const [customInterval, setCustomInterval] = useState<number | "">(30)
-  const [alertsSaving, setAlertsSaving] = useState(false)
+  const [intervalSaving, setIntervalSaving] = useState(false)
 
   // Team
   const [teamMembers, setTeamMembers] = useState<{ id: string; email: string; name?: string; status: string }[]>([])
@@ -147,10 +151,15 @@ export default function SettingsPage() {
       if (d.plan) setPlan(d.plan)
     })
     fetch("/api/user/alerts").then(r => r.json()).then(d => {
-      if (d.slackWebhookUrl) setSlackWebhook(d.slackWebhookUrl)
+      if (d.slackWebhookUrl) { setSlackConnected(true); setSlackChannel(d.slackChannelName ?? ""); setSlackTeam(d.slackTeamName ?? "") }
       if (d.pagerdutyKey) setPagerdutyKey(d.pagerdutyKey)
       if (d.customIntervalSec) setCustomInterval(d.customIntervalSec)
     }).catch(() => {})
+    // Handle Slack OAuth redirect result
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("slack") === "connected") { setSlackConnected(true); showToast("success", "Slack connected!"); window.history.replaceState({}, "", "/settings?tab=alerts") }
+    if (params.get("slack") === "error") { showToast("error", "Slack connection failed. Try again."); window.history.replaceState({}, "", "/settings?tab=alerts") }
+    if (params.get("tab")) setTab(params.get("tab") as Tab)
     fetch("/api/team").then(r => r.json()).then(d => { if (Array.isArray(d)) setTeamMembers(d) }).catch(() => {})
     fetch("/api/oncall").then(r => r.json()).then(d => { if (Array.isArray(d)) setSchedules(d) }).catch(() => {})
   }, [])
@@ -219,14 +228,29 @@ export default function SettingsPage() {
     } finally { setBillingLoading(null) }
   }
 
-  async function saveAlerts() {
-    setAlertsSaving(true)
+  async function disconnectSlack() {
+    setSlackDisconnecting(true)
     try {
-      const body: Record<string, unknown> = { slackWebhookUrl: slackWebhook || null, pagerdutyKey: pagerdutyKey || null }
-      if (plan === "team" && customInterval !== "") body.customIntervalSec = Number(customInterval)
-      await fetch("/api/user/alerts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-      showToast("success", "Alert settings saved")
-    } finally { setAlertsSaving(false) }
+      await fetch("/api/auth/slack/disconnect", { method: "POST" })
+      setSlackConnected(false); setSlackChannel(""); setSlackTeam("")
+      showToast("success", "Slack disconnected")
+    } finally { setSlackDisconnecting(false) }
+  }
+
+  async function savePagerduty() {
+    setPdSaving(true)
+    try {
+      await fetch("/api/user/alerts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pagerdutyKey: pagerdutyKey || null }) })
+      showToast("success", pagerdutyKey ? "PagerDuty key saved" : "PagerDuty disconnected")
+    } finally { setPdSaving(false) }
+  }
+
+  async function saveInterval() {
+    setIntervalSaving(true)
+    try {
+      await fetch("/api/user/alerts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customIntervalSec: customInterval !== "" ? Number(customInterval) : null }) })
+      showToast("success", "Check interval updated")
+    } finally { setIntervalSaving(false) }
   }
 
   async function inviteMember() {
@@ -522,67 +546,95 @@ export default function SettingsPage() {
 
             {tab === "alerts" && (
               <>
+                {/* Email */}
                 <div style={S.card} className="settings-card">
-                  <p style={S.cardTitle}>Email alerts</p>
-                  <p style={S.cardDesc}>Alerts are sent to your account email when a project goes down or recovers. Toggle in Notifications.</p>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#0d0d0d", border: "1px solid #161616", borderRadius: 8 }}>
-                    <Mail01Icon size={14} color="#4ade80" />
-                    <span style={{ fontSize: 12.5, color: "#888" }}>{session?.user?.email}</span>
-                    <span style={{ marginLeft: "auto", fontSize: 11, padding: "2px 8px", borderRadius: 5, background: "#0d2a1a", color: "#4ade80", border: "1px solid #1a4a2a" }}>active</span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <p style={S.cardTitle}>Email</p>
+                      <p style={{ ...S.cardDesc, margin: 0 }}>Sent to your account email on incidents.</p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: "#888" }}>{session?.user?.email}</span>
+                      <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 20, background: "#0d2a1a", color: "#4ade80", border: "1px solid #1a4a2a", fontWeight: 600 }}>Active</span>
+                    </div>
                   </div>
                 </div>
 
+                {/* Slack */}
                 <div style={S.card} className="settings-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <p style={{ ...S.cardTitle, margin: 0 }}>Slack alerts</p>
-                    {plan === "free" && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#1e1b4b", color: "#a5b4fc", border: "1px solid #2a1a5e" }}>Pro+</span>}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                        <p style={{ ...S.cardTitle, margin: 0 }}>Slack</p>
+                        {plan === "free" && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#1e1b4b", color: "#a5b4fc", border: "1px solid #2a1a5e" }}>Pro+</span>}
+                      </div>
+                      <p style={{ ...S.cardDesc, margin: 0 }}>
+                        {slackConnected
+                          ? `Connected to ${slackChannel ? `#${slackChannel}` : "a channel"}${slackTeam ? ` in ${slackTeam}` : ""}`
+                          : "Get incident alerts in any Slack channel."}
+                      </p>
+                    </div>
+                    {plan === "free" ? (
+                      <button onClick={() => setTab("billing")} style={{ ...S.btn, background: "#1e1b4b", color: "#a5b4fc", border: "1px solid #2a1a5e", fontSize: 12 }}>
+                        Upgrade to connect
+                      </button>
+                    ) : slackConnected ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 20, background: "#0d2a1a", color: "#4ade80", border: "1px solid #1a4a2a", fontWeight: 600 }}>Connected</span>
+                        <button onClick={disconnectSlack} disabled={slackDisconnecting} style={{ ...S.btn, background: "transparent", color: "#f87171", border: "1px solid #2a1010", fontSize: 12, padding: "6px 12px" }}>
+                          {slackDisconnecting ? "…" : "Disconnect"}
+                        </button>
+                      </div>
+                    ) : (
+                      <a href="/api/auth/slack" style={{ ...S.btn, background: "#4a154b", color: "#fff", fontSize: 12, textDecoration: "none", display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 8 }}>
+                        <svg width="16" height="16" viewBox="0 0 54 54" fill="none"><path d="M19.7 33.3a4.9 4.9 0 1 1-4.9-4.9H19.7v4.9z" fill="#E01E5A"/><path d="M22.2 33.3a4.9 4.9 0 0 1 9.8 0v12.3a4.9 4.9 0 1 1-9.8 0V33.3z" fill="#E01E5A"/><path d="M27.1 19.7a4.9 4.9 0 1 1 4.9-4.9v4.9H27.1z" fill="#36C5F0"/><path d="M27.1 22.2a4.9 4.9 0 0 1 0 9.8H14.8a4.9 4.9 0 1 1 0-9.8H27.1z" fill="#36C5F0"/><path d="M40.7 27.1a4.9 4.9 0 1 1-4.9 4.9V27.1h4.9z" fill="#2EB67D"/><path d="M38.2 27.1a4.9 4.9 0 0 1 0-9.8h12.3a4.9 4.9 0 1 1 0 9.8H38.2z" fill="#2EB67D"/><path d="M33.3 13.5a4.9 4.9 0 1 1 4.9 4.9H33.3V13.5z" fill="#ECB22E"/><path d="M33.3 16a4.9 4.9 0 0 1-9.8 0V3.7a4.9 4.9 0 1 1 9.8 0V16z" fill="#ECB22E"/></svg>
+                        Add to Slack
+                      </a>
+                    )}
                   </div>
-                  <p style={S.cardDesc}>Paste your Slack incoming webhook URL to get alerts in a channel.</p>
-                  {plan === "free" ? (
-                    <div style={{ padding: "12px 14px", background: "#0d0d0d", border: "1px solid #1c1c1c", borderRadius: 8, fontSize: 12.5, color: "#444" }}>
-                      Upgrade to Pro to enable Slack alerts. <a href="#" onClick={() => setTab("billing")} style={{ color: "#a5b4fc" }}>View plans →</a>
-                    </div>
-                  ) : (
-                    <div style={S.row}>
-                      <label style={S.label}>Slack webhook URL</label>
-                      <input style={S.input} value={slackWebhook} onChange={e => setSlackWebhook(e.target.value)} placeholder="https://hooks.slack.com/services/..." />
-                    </div>
-                  )}
                 </div>
 
+                {/* PagerDuty */}
                 <div style={S.card} className="settings-card">
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     <p style={{ ...S.cardTitle, margin: 0 }}>PagerDuty</p>
                     {plan === "free" && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#1e1b4b", color: "#a5b4fc", border: "1px solid #2a1a5e" }}>Pro+</span>}
                   </div>
-                  <p style={S.cardDesc}>Enter your PagerDuty Events API v2 routing key to trigger incidents.</p>
+                  <p style={S.cardDesc}>Triggers and resolves PagerDuty incidents automatically.</p>
                   {plan === "free" ? (
-                    <div style={{ padding: "12px 14px", background: "#0d0d0d", border: "1px solid #1c1c1c", borderRadius: 8, fontSize: 12.5, color: "#444" }}>
-                      Upgrade to Pro to enable PagerDuty. <a href="#" onClick={() => setTab("billing")} style={{ color: "#a5b4fc" }}>View plans →</a>
-                    </div>
+                    <button onClick={() => setTab("billing")} style={{ ...S.btn, background: "#1e1b4b", color: "#a5b4fc", border: "1px solid #2a1a5e", fontSize: 12 }}>Upgrade to connect</button>
                   ) : (
-                    <div style={S.row}>
-                      <label style={S.label}>PagerDuty routing key</label>
-                      <input style={S.input} value={pagerdutyKey} onChange={e => setPagerdutyKey(e.target.value)} placeholder="xxxxxxxxxxxxxxxxxxxxxx" />
+                    <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={S.label}>Integration key (Events API v2)</label>
+                        <input style={S.input} value={pagerdutyKey} onChange={e => setPagerdutyKey(e.target.value)} placeholder="Paste your routing key…" type="password" />
+                      </div>
+                      <button onClick={savePagerduty} disabled={pdSaving} style={{ ...S.btn, background: pagerdutyKey ? "#e8e8e8" : "#1a1a1a", color: pagerdutyKey ? "#000" : "#555", border: "1px solid #222", padding: "9px 16px", flexShrink: 0 }}>
+                        {pdSaving ? "Saving…" : pagerdutyKey ? "Save" : "Remove"}
+                      </button>
+                    </div>
+                  )}
+                  {pagerdutyKey && plan !== "free" && (
+                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 20, background: "#0d2a1a", color: "#4ade80", border: "1px solid #1a4a2a", fontWeight: 600 }}>Connected</span>
+                      <span style={{ fontSize: 11.5, color: "#444" }}>Incidents will be triggered automatically</span>
                     </div>
                   )}
                 </div>
 
+                {/* Custom interval (Team) */}
                 {plan === "team" && (
                   <div style={S.card} className="settings-card">
                     <p style={S.cardTitle}>Custom check interval</p>
-                    <p style={S.cardDesc}>Override the default 30-second monitoring interval (in seconds, min 10).</p>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                      <input type="number" min={10} max={3600} style={{ ...S.input, width: 120 }} value={customInterval} onChange={e => setCustomInterval(e.target.value === "" ? "" : Number(e.target.value))} />
+                    <p style={S.cardDesc}>Override the default 30-second monitoring interval.</p>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input type="number" min={10} max={3600} style={{ ...S.input, width: 110 }} value={customInterval} onChange={e => setCustomInterval(e.target.value === "" ? "" : Number(e.target.value))} />
                       <span style={{ fontSize: 12, color: "#444" }}>seconds</span>
+                      <button onClick={saveInterval} disabled={intervalSaving} style={{ ...S.btn, background: "#e8e8e8", color: "#000", marginLeft: "auto" }}>
+                        {intervalSaving ? "Saving…" : "Save"}
+                      </button>
                     </div>
                   </div>
-                )}
-
-                {plan !== "free" && (
-                  <button onClick={saveAlerts} disabled={alertsSaving} style={{ ...S.btn, background: "#e8e8e8", color: "#000" }}>
-                    {alertsSaving ? "Saving…" : "Save alert settings"}
-                  </button>
                 )}
               </>
             )}

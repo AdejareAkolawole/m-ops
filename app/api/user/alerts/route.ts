@@ -7,7 +7,7 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { notifyEmail: true, notifyIncidents: true, slackWebhookUrl: true, pagerdutyKey: true, customIntervalSec: true, plan: true },
+    select: { notifyEmail: true, notifyIncidents: true, slackWebhookUrl: true, slackChannelName: true, slackTeamName: true, pagerdutyKey: true, customIntervalSec: true, plan: true },
   })
   return NextResponse.json(user)
 }
