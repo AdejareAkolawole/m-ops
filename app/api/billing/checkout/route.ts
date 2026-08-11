@@ -37,11 +37,17 @@ export async function POST(req: NextRequest) {
     }),
   })
 
+  const data = await res.json().catch(() => ({}))
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    return NextResponse.json({ error: err.message || "Failed to create checkout" }, { status: 502 })
+    console.error("Bachs checkout error:", JSON.stringify(data))
+    return NextResponse.json({ error: data.detail || data.message || "Failed to create checkout" }, { status: 502 })
   }
 
-  const data = await res.json()
+  if (!data.checkout_url) {
+    console.error("Bachs returned no checkout_url:", JSON.stringify(data))
+    return NextResponse.json({ error: "No checkout URL returned" }, { status: 502 })
+  }
+
   return NextResponse.json({ url: data.checkout_url })
 }
