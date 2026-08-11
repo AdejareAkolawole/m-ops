@@ -3,17 +3,32 @@ import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 
 export const metadata: Metadata = {
-  title: { default: "m-ops — Uptime Monitoring & AI Project Insights", template: "%s — m-ops" },
-  description: "Monitor your web services, catch incidents instantly, and get AI-powered insights into your stack. Built for developers who ship.",
-  keywords: ["uptime monitoring", "status page", "incident management", "developer tools", "website monitoring"],
+  title: { default: "m-ops — Full-Stack Developer Ops", template: "%s — m-ops" },
+  description: "Monitor deployments, debug with AI, track SLA, get Slack alerts. The ops platform built for developers who ship.",
+  keywords: ["uptime monitoring", "ai debugging", "developer ops", "sla reports", "code insights", "incident management"],
   authors: [{ name: "m-ops" }],
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     siteName: "m-ops",
-    title: "m-ops — Uptime Monitoring & AI Project Insights",
-    description: "Monitor your web services, catch incidents instantly, and get AI-powered insights into your stack.",
+    title: "m-ops — Full-Stack Developer Ops",
+    description: "Monitor deployments, debug with AI, track SLA, get Slack alerts. The ops platform built for developers who ship.",
+    images: [{ url: "/og.svg", width: 1200, height: 630, alt: "m-ops — Full-Stack Developer Ops" }],
+    url: "https://m-ops.pro",
   },
-  twitter: { card: "summary_large_image", title: "m-ops", description: "Uptime monitoring & AI project insights for developers." },
+  twitter: {
+    card: "summary_large_image",
+    site: "@mopspro",
+    title: "m-ops — Full-Stack Developer Ops",
+    description: "Monitor deployments. Debug with AI. Track SLA. Get Slack alerts. Built for developers who ship fast.",
+    images: ["/og.svg"],
+  },
   metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3005"),
 }
 
