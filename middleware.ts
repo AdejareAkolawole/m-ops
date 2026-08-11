@@ -36,15 +36,19 @@ export default auth(async function middleware(req: NextRequest & { auth: any }) 
     }
   }
 
-  if (
-    (pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/settings") ||
-      pathname.startsWith("/admin")) &&
-    !req.auth
-  ) {
+  const isProtected =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/admin")
+
+  if (isProtected && !req.auth) {
     const loginUrl = new URL("/login", req.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  if (isProtected && req.auth && !(req.auth.user as any)?.emailVerified && pathname !== "/verify-email") {
+    return NextResponse.redirect(new URL("/verify-email", req.url))
   }
 
   return NextResponse.next()
@@ -55,6 +59,7 @@ export const config = {
     "/dashboard/:path*",
     "/settings/:path*",
     "/admin/:path*",
+    "/verify-email",
     "/api/auth/signin",
     "/api/auth/signup",
     "/api/auth/forgot-password",

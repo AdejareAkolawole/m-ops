@@ -54,9 +54,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      if (user) token.id = user.id
+      if (user) {
+        token.id = user.id
+        // Fetch emailVerified so middleware can gate unverified users
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id! }, select: { emailVerified: true } })
+        token.emailVerified = dbUser?.emailVerified ?? null
+      }
       if (account?.provider === "github" && account.access_token) {
         token.githubToken = account.access_token
+        token.emailVerified = new Date() // GitHub OAuth users are always verified
         // PrismaAdapter doesn't update access_token on repeat sign-ins — do it explicitly
         await prisma.account.updateMany({
           where: { userId: user?.id ?? token.id as string, provider: "github" },
@@ -68,6 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token?.id) session.user.id = token.id as string
       if (token?.githubToken) (session as any).githubToken = token.githubToken
+      ;(session.user as any).emailVerified = token.emailVerified ?? null
       return session
     },
   },
