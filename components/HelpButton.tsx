@@ -210,10 +210,6 @@ export function HelpButton({ onAddProject, plan, inline }: Props) {
         }}
         title="Help & options (press ?)"
       >
-        {open
-          ? <Cancel01Icon size={13} color="#a78bfa" />
-          : <QuestionIcon size={13} color="#666" />
-        }
         <span style={{ fontSize: 12.5, fontWeight: 600, color: open ? "#a78bfa" : "#666" }}>Help</span>
       </button>
     </div>
