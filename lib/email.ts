@@ -1,7 +1,7 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const FROM = "m-ops <hello@m-ops.pro>"
 const ADMIN = "adejare.akolawole@gmail.com"
-const BASE_URL = process.env.NEXTAUTH_URL || "https://m-ops.pro"
+const BASE_URL = process.env.NEXTAUTH_URL || process.env.AUTH_URL || "https://m-ops.pro"
 
 async function send(to: string | string[], subject: string, html: string, replyTo?: string) {
   if (!RESEND_API_KEY) return
