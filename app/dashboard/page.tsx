@@ -7,7 +7,7 @@ import {
   updateVercelProject, clearVercelAccount,
   getVercelSelectedIds, saveVercelSelectedIds, clearVercelSelectedIds,
   getChecks, getAllChecks, saveProviderProjects,
-  saveGitHubAccount, savePlanCache,
+  saveGitHubAccount, savePlanCache, initStore,
 } from "@/lib/store"
 function dbToManual(p: any): ManualProject {
   const meta = p.metadata ? JSON.parse(p.metadata) : {}
@@ -99,6 +99,7 @@ export default function Home() {
   const prevStatusRef = useRef<Record<string, boolean | undefined>>({})
 
   useEffect(() => {
+    if (session?.user?.id) initStore(session.user.id)
     const account = getVercelAccount()
     setVercelConnected(!!account)
     const all = getVercelProjects()
