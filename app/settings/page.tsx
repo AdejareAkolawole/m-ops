@@ -837,9 +837,22 @@ export default function SettingsPage() {
                       </p>
                     </div>
                     {plan !== "free" && (
-                      <a href="mailto:hello@m-ops.pro" style={{ ...S.btn, background: "#1a1a1a", color: "#555", border: "1px solid #222", fontSize: 12, textDecoration: "none", display: "inline-block" }}>
-                        Manage subscription
-                      </a>
+                      <button
+                        onClick={async () => {
+                          if (!confirm("Cancel your subscription? You'll be downgraded to the free plan immediately.")) return
+                          try {
+                            const r = await fetch("/api/billing/cancel", { method: "POST" })
+                            if (!r.ok) throw new Error((await r.json()).error || "Failed")
+                            setPlan("free")
+                            setToast({ type: "success", message: "Subscription cancelled. You're now on the free plan." })
+                          } catch (e: unknown) {
+                            setToast({ type: "error", message: e instanceof Error ? e.message : "Failed to cancel" })
+                          }
+                        }}
+                        style={{ ...S.btn, background: "#1a1a1a", color: "#555", border: "1px solid #222", fontSize: 12 }}
+                      >
+                        Cancel subscription
+                      </button>
                     )}
                   </div>
                 </div>

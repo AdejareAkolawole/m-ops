@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendProjectDownAlert, sendProjectUpAlert } from "@/lib/email"
 
-// In-memory last-known status cache (resets on cold start, that's fine)
-const statusCache = new Map<string, boolean>()
-
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization")
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -48,11 +45,18 @@ export async function GET(req: NextRequest) {
 
       results.push({ id: project.id, name: project.name, ok, ms: responseMs, error })
 
-      const wasDown = statusCache.get(project.id)
-      const justWentDown = !ok && wasDown !== false
-      const justCameBack = ok && wasDown === false
+      // Read last status from DB metadata to survive cold starts
+      const meta = (project.metadata as Record<string, unknown> | null) ?? {}
+      const lastStatusOk: boolean | undefined = typeof meta.lastStatusOk === "boolean" ? meta.lastStatusOk : undefined
 
-      statusCache.set(project.id, ok)
+      const justWentDown = !ok && lastStatusOk !== false
+      const justCameBack = ok && lastStatusOk === false
+
+      // Persist new status back to metadata
+      await prisma.project.update({
+        where: { id: project.id },
+        data: { metadata: { ...meta, lastStatusOk: ok } },
+      })
 
       // Only alert on state transitions to avoid spam
       if (!project.user?.notifyEmail || !project.user?.notifyIncidents) return
