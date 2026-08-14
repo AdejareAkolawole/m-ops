@@ -27,12 +27,12 @@ const PHASES: Phase[] = [
       { title: "Custom metric threshold alerts", desc: "Set thresholds on any hub-health stat — crash_rate > 2%, error_rate spikes, failed_payments > 0. Alert fires the moment your app crosses the line.", status: "active", tag: "Building" },
       { title: "Multi-region uptime checks", desc: "Checks from US-East, EU-West, and Asia-Pacific simultaneously. See if your CDN is working everywhere, not just where your server is.", status: "active", tag: "Building" },
       { title: "API response validation", desc: "Not just 'did it respond?' — validate the actual response body. Alert when a key field is missing, null, or changed shape.", status: "active", tag: "Building" },
+      { title: "Crash SDK integration", desc: "Connect Crashlytics, Sentry, or Bugsnag. Real-time crash spike alerts in minutes — not the day-late trend report App Store Connect gives you. Get paged the moment a release breaks.", status: "active", tag: "Building" },
     ],
   },
   {
     label: "Next", phase: "planned", quarter: "Q4 2026",
     items: [
-      { title: "Crash SDK integration", desc: "Connect Crashlytics, Sentry, or Bugsnag. Real-time crash spike alerts in minutes — not the day-late trend report App Store Connect gives you. Get paged the moment a release breaks.", status: "active", tag: "Building" },
       { title: "Cron job monitoring", desc: "Register your scheduled jobs. If a cron doesn't check in on time, you get alerted. Works with any language or platform.", status: "planned", tag: "Planned" },
       { title: "Error tracking (lite Sentry)", desc: "Catch unhandled exceptions directly in m-ops. Stack traces, frequency, first/last seen — no separate account needed.", status: "planned", tag: "Planned" },
       { title: "GitHub Actions deployment tracking", desc: "Link deployments to uptime. See exactly which release caused the spike. Correlate git SHA, deploy time, and incident start.", status: "planned", tag: "Planned" },
