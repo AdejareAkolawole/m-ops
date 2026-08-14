@@ -32,7 +32,7 @@ const PHASES: Phase[] = [
   {
     label: "Next", phase: "planned", quarter: "Q4 2026",
     items: [
-      { title: "App Store Connect integration", desc: "Poll App Store Connect for crash rate, rating drops, and review spikes after a release. Get paged at 11pm before your users post about it.", status: "planned", tag: "Planned" },
+      { title: "Crash SDK integration", desc: "Connect Crashlytics, Sentry, or Bugsnag. Real-time crash spike alerts in minutes — not the day-late trend report App Store Connect gives you. Get paged the moment a release breaks.", status: "planned", tag: "Planned" },
       { title: "Cron job monitoring", desc: "Register your scheduled jobs. If a cron doesn't check in on time, you get alerted. Works with any language or platform.", status: "planned", tag: "Planned" },
       { title: "Error tracking (lite Sentry)", desc: "Catch unhandled exceptions directly in m-ops. Stack traces, frequency, first/last seen — no separate account needed.", status: "planned", tag: "Planned" },
       { title: "GitHub Actions deployment tracking", desc: "Link deployments to uptime. See exactly which release caused the spike. Correlate git SHA, deploy time, and incident start.", status: "planned", tag: "Planned" },
