@@ -352,6 +352,7 @@ export default function LandingPage() {
           <a href="#features" className="nav-a">Features</a>
           <a href="#how" className="nav-a">How it works</a>
           <a href="#pricing" className="nav-a">Pricing</a>
+          <Link href="/roadmap" className="nav-a">Roadmap</Link>
         </div>
 
         <div className="hide-mob" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
