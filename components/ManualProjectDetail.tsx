@@ -105,8 +105,8 @@ export function ManualProjectDetail({ project, onBack, onDeleted, onUpdated, act
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {tab === "overview"    && <OverviewTab check={check} history={history} checking={checking} url={project.url} project={project} />}
-        {tab === "performance" && <PerformanceTab history={history} />}
+        {tab === "overview"    && <OverviewTab check={check} history={history} checking={checking} url={project.url} project={project} projectId={project.id} />}
+        {tab === "performance" && <PerformanceTab history={history} projectId={project.id} />}
         {tab === "incidents"   && <IncidentsTab history={history} projectId={project.id} />}
         {tab === "settings"    && <SettingsTab project={project} onUpdated={onUpdated} onDeleted={onDeleted} />}
         {tab === "sla"         && <SlaTab history={history} projectName={project.name} />}
@@ -152,9 +152,18 @@ function StatusPill({ status, checking }: { status?: string; checking: boolean }
   )
 }
 
-function OverviewTab({ check, history, checking, url, project }: { check: CheckResult | null; history: CheckResult[]; checking: boolean; url: string; project: ManualProject }) {
+function OverviewTab({ check, history, checking, url, project, projectId }: { check: CheckResult | null; history: CheckResult[]; checking: boolean; url: string; project: ManualProject; projectId: string }) {
   const uptimePct = history.length > 0
     ? Math.round(history.filter(h => h.status === "online").length / history.length * 100) : null
+
+  const [statusPage, setStatusPage] = useState<{ slug: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/status-page`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setStatusPage(d))
+      .catch(() => {})
+  }, [projectId])
 
   return (
     <div className="p-6 space-y-5 max-w-4xl">
@@ -210,6 +219,25 @@ function OverviewTab({ check, history, checking, url, project }: { check: CheckR
         <QuickLink href={`${url}/api/hub-health`} icon={<RocketIcon size={14} />} label="Health endpoint" sub="Raw response" />
       </div>
 
+      {statusPage && (
+        <div className="flex items-center justify-between gap-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-white shrink-0" />
+            <span className="text-xs text-zinc-500 font-mono truncate">m-ops.pro/status/{statusPage.slug}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => { navigator.clipboard.writeText(`https://m-ops.pro/status/${statusPage.slug}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+              className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors">
+              {copied ? "Copied!" : "Copy link"}
+            </button>
+            <a href={`https://m-ops.pro/status/${statusPage.slug}`} target="_blank" rel="noopener noreferrer"
+              className="text-xs font-semibold text-white hover:opacity-70 transition-opacity">
+              View ↗
+            </a>
+          </div>
+        </div>
+      )}
+
       {project.adminApiUrl && (() => {
         saveProjectAdminConfig(project.id, { adminUrl: project.adminUrl, adminApiUrl: project.adminApiUrl, adminApiToken: project.adminApiToken })
         return <AnalyticsDashboard projectId={project.id} />
@@ -230,25 +258,37 @@ function OverviewTab({ check, history, checking, url, project }: { check: CheckR
   )
 }
 
-function PerformanceTab({ history }: { history: CheckResult[] }) {
-  const [window, setWindow] = useState("24h")
+function PerformanceTab({ history, projectId }: { history: CheckResult[]; projectId: string }) {
+  const [window, setWindow] = useState("7d")
+  const [dbData, setDbData] = useState<{ logs: { ok: boolean; responseMs: number | null; checkedAt: string }[]; uptime: number; avgMs: number | null; p99: number | null; total: number } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const days = window === "1h" ? 1 : window === "6h" ? 1 : window === "24h" ? 1 : window === "7d" ? 7 : 30
+    setLoading(true)
+    fetch(`/api/projects/${projectId}/uptime-logs?days=${days}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setDbData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [projectId, window])
+
+  const logs = dbData?.logs ?? []
+  const chrono = [...logs].reverse()
+  const avg = dbData?.avgMs ?? null
+  const p99 = dbData?.p99 ?? null
+  const uptimePct = dbData ? Math.round(dbData.uptime) : null
   const windowMs = TIME_WINDOWS.find(w => w.label === window)?.ms ?? Infinity
   const now = Date.now()
   const filtered = history.filter(h => now - new Date(h.timestamp).getTime() <= windowMs)
-  const chrono = filtered.slice().reverse()
-  const times = filtered.filter(h => h.responseMs != null).map(h => h.responseMs!)
-  const avg = times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null
-  const sorted = [...times].sort((a, b) => a - b)
+  const sorted = (logs.filter(l => l.responseMs != null).map(l => l.responseMs!)).sort((a, b) => a - b)
   const p95 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.95)] ?? sorted[sorted.length - 1] : null
-  const p99 = sorted.length > 0 ? sorted[Math.floor(sorted.length * 0.99)] ?? sorted[sorted.length - 1] : null
-  const uptimePct = filtered.length > 0 ? Math.round(filtered.filter(h => h.status === "online").length / filtered.length * 100) : null
 
   return (
     <div className="p-6 space-y-5 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Performance</h2>
-          <p className="text-xs text-zinc-400 mt-0.5">{filtered.length} checks in window</p>
+          <p className="text-xs text-zinc-400 mt-0.5">{loading ? "Loading…" : `${logs.length} checks in window`}</p>
         </div>
         <div className="flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1">
           {TIME_WINDOWS.map(w => (
@@ -274,21 +314,25 @@ function PerformanceTab({ history }: { history: CheckResult[] }) {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm font-semibold text-zinc-900 dark:text-white">Response time</p>
-              <p className="text-xs text-zinc-400 mt-0.5">milliseconds over time</p>
+              <p className="text-xs text-zinc-400 mt-0.5">milliseconds over time (from DB)</p>
             </div>
             {avg != null && <span className={cn("text-lg font-bold", avg > 2000 ? "text-red-500" : avg > 800 ? "text-amber-500" : "text-white")}>{avg}ms avg</span>}
           </div>
-          <ResponseChart data={chrono} />
+          <DbResponseChart logs={chrono} />
+        </div>
+      ) : loading ? (
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-10 text-center">
+          <p className="text-sm text-zinc-400">Loading performance data…</p>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 p-10 text-center">
-          <p className="text-sm text-zinc-400">Not enough data yet in this window.</p>
+          <p className="text-sm text-zinc-400">No data yet — checks will populate this once the cron runs.</p>
         </div>
       )}
-      {filtered.length > 0 && (
+      {logs.length > 0 && (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5">
           <p className="text-sm font-semibold text-zinc-900 dark:text-white mb-4">Uptime track</p>
-          <UptimeBars history={filtered} count={Math.min(filtered.length, 60)} />
+          <DbUptimeBars logs={logs} count={Math.min(logs.length, 90)} />
           <div className="flex justify-between mt-2">
             <p className="text-[10px] text-zinc-400">Oldest</p>
             <p className="text-[10px] text-zinc-400">Now</p>
@@ -558,6 +602,53 @@ function UptimeBars({ history, count = 45 }: { history: CheckResult[]; count?: n
             status === "up" ? "h-full bg-white/10" :
             status === "down" ? "h-full bg-red-500" :
             status === "degraded" ? "h-3/4 bg-amber-400" :
+            "h-1/3 bg-zinc-200 dark:bg-zinc-700"
+          )} />
+      ))}
+    </div>
+  )
+}
+
+function DbResponseChart({ logs }: { logs: { responseMs: number | null; checkedAt: string }[] }) {
+  const values = logs.map(l => l.responseMs ?? 0)
+  if (values.length < 2) return null
+  const max = Math.max(...values, 1)
+  const W = 600, H = 100
+  const points = values.map((v, i) => [(i / (values.length - 1)) * W, H - (v / max) * H] as [number, number])
+  const pathD = points.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ")
+  const areaD = `${pathD} L ${W} ${H} L 0 ${H} Z`
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="dbGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={areaD} fill="url(#dbGrad)" />
+        <path d={pathD} fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      </svg>
+      <div className="flex justify-between text-[10px] text-zinc-400 mt-1">
+        <span>0ms</span><span>{max}ms peak</span>
+      </div>
+    </div>
+  )
+}
+
+function DbUptimeBars({ logs, count = 90 }: { logs: { ok: boolean }[]; count?: number }) {
+  const bars = Array.from({ length: count }, (_, i) => {
+    const entry = logs[count - 1 - i]
+    if (!entry) return "empty"
+    return entry.ok ? "up" : "down"
+  })
+  return (
+    <div className="flex items-end gap-0.5 h-10">
+      {bars.map((status, i) => (
+        <div key={i} title={status}
+          className={cn("flex-1 rounded-sm",
+            status === "up" ? "h-full bg-white/10" :
+            status === "down" ? "h-full bg-red-500" :
             "h-1/3 bg-zinc-200 dark:bg-zinc-700"
           )} />
       ))}
