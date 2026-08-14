@@ -96,6 +96,7 @@ export default function Home() {
   const uptimeRef = useRef<Record<string, UptimeResult>>({})
   const [vercelToken, setVercelToken] = useState<string | null>(null)
   const [vercelTeamId, setVercelTeamId] = useState<string | null>(null)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [connectingProvider, setConnectingProvider] = useState<HostingProvider | null>(null)
   const [signingOut, setSigningOut] = useState(false)
   const prevStatusRef = useRef<Record<string, boolean | undefined>>({})
@@ -107,7 +108,7 @@ export default function Home() {
     fetch("/api/user/vercel-connection")
       .then(r => r.ok ? r.json() : null)
       .then(async (conn) => {
-        if (!conn?.token) return
+        if (!conn?.token) { setInitialLoading(false); return }
         setVercelToken(conn.token)
         setVercelTeamId(conn.teamId ?? null)
         setVercelConnected(true)
@@ -130,7 +131,8 @@ export default function Home() {
         } else {
           setShowPicker(true)
         }
-      }).catch(() => {})
+        setInitialLoading(false)
+      }).catch(() => { setInitialLoading(false) })
 
     // Load manual projects from DB
     fetch("/api/projects")
@@ -462,7 +464,7 @@ export default function Home() {
 
             {/* ── Dashboard content ── */}
             <div className="flex-1 overflow-y-auto">
-              {totalProjects === 0 && !vercelConnected ? (
+              {totalProjects === 0 && !vercelConnected && !initialLoading ? (
                 <div style={{ padding: "60px 20px", textAlign: "center" }}>
                   <EmptyState
                     onAddProject={() => setShowAddProject(true)}
