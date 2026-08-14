@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { ManualProject, CheckResult, HubHealthResponse } from "@/lib/types"
 import { pushCheck, getChecks } from "@/lib/store"
 import {
@@ -107,7 +107,7 @@ export function ManualProjectDetail({ project, onBack, onDeleted, onUpdated, act
       <div className="flex-1 overflow-y-auto">
         {tab === "overview"    && <OverviewTab check={check} history={history} checking={checking} url={project.url} project={project} />}
         {tab === "performance" && <PerformanceTab history={history} />}
-        {tab === "incidents"   && <IncidentsTab history={history} />}
+        {tab === "incidents"   && <IncidentsTab history={history} projectId={project.id} />}
         {tab === "settings"    && <SettingsTab project={project} onUpdated={onUpdated} onDeleted={onDeleted} />}
         {tab === "sla"         && <SlaTab history={history} projectName={project.name} />}
         {tab === "cms" && (
@@ -299,31 +299,34 @@ function PerformanceTab({ history }: { history: CheckResult[] }) {
   )
 }
 
-function IncidentsTab({ history }: { history: CheckResult[] }) {
+function IncidentsTab({ history, projectId }: { history: CheckResult[]; projectId: string }) {
   const incidents = deriveIncidents(history)
   const active = incidents.filter(i => !i.resolved)
   const resolved = incidents.filter(i => i.resolved)
   return (
-    <div className="p-6 space-y-5 max-w-3xl">
-      {active.length > 0 && (
-        <div className="rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 p-4">
-          <p className="text-sm font-bold text-red-600 dark:text-red-400 mb-3">⚠ Active incident</p>
-          {active.map((inc, i) => <IncidentRow key={i} inc={inc} />)}
-        </div>
-      )}
-      {incidents.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center">
-          <CheckmarkCircle02Icon size={32} className="text-white mx-auto mb-3" />
-          <p className="text-sm font-semibold text-zinc-900 dark:text-white">All good</p>
-          <p className="text-xs text-zinc-400 mt-1">No incidents detected in your check history.</p>
-        </div>
-      ) : resolved.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Past incidents</p>
-          <div className="space-y-2">{resolved.map((inc, i) => <IncidentRow key={i} inc={inc} />)}</div>
-        </div>
-      )}
-    </div>
+    <>
+      <div className="p-6 space-y-5 max-w-3xl">
+        {active.length > 0 && (
+          <div className="rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 p-4">
+            <p className="text-sm font-bold text-red-600 dark:text-red-400 mb-3">⚠ Active incident</p>
+            {active.map((inc, i) => <IncidentRow key={i} inc={inc} />)}
+          </div>
+        )}
+        {incidents.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center">
+            <CheckmarkCircle02Icon size={32} className="text-white mx-auto mb-3" />
+            <p className="text-sm font-semibold text-zinc-900 dark:text-white">All good</p>
+            <p className="text-xs text-zinc-400 mt-1">No incidents detected in your check history.</p>
+          </div>
+        ) : resolved.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Past incidents</p>
+            <div className="space-y-2">{resolved.map((inc, i) => <IncidentRow key={i} inc={inc} />)}</div>
+          </div>
+        )}
+      </div>
+      <DbIncidentsSection projectId={projectId} />
+    </>
   )
 }
 
@@ -415,6 +418,8 @@ function SettingsTab({ project, onUpdated, onDeleted }: { project: ManualProject
           {saved ? "Saved!" : "Save changes"}
         </button>
       </div>
+      <StatusPageSection projectId={project.id} />
+
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-red-200 dark:border-red-900/40 p-5">
         <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1">Danger zone</p>
         <p className="text-xs text-zinc-400 mb-4">Permanently remove this project and all its check history.</p>
@@ -597,6 +602,113 @@ function ErrorBanner({ icon, title, message, color }: { icon: React.ReactNode; t
       <div>
         <p className="text-xs font-semibold">{title}</p>
         <p className="text-xs mt-0.5 opacity-80">{message}</p>
+      </div>
+    </div>
+  )
+}
+
+function StatusPageSection({ projectId }: { projectId: string }) {
+  const [page, setPage] = useState<{ slug: string; title: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/status-page`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setPage(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [projectId])
+
+  async function enable() {
+    setSaving(true)
+    const res = await fetch(`/api/projects/${projectId}/status-page`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) })
+    if (res.ok) setPage(await res.json())
+    setSaving(false)
+  }
+
+  async function disable() {
+    setSaving(true)
+    await fetch(`/api/projects/${projectId}/status-page`, { method: "DELETE" })
+    setPage(null)
+    setSaving(false)
+  }
+
+  const url = page ? `https://m-ops.pro/status/${page.slug}` : null
+
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-4">
+      <div>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Public status page</p>
+        <p className="text-[11px] text-zinc-400 mt-0.5">Share a public URL showing uptime history and incidents.</p>
+      </div>
+      {loading ? (
+        <p className="text-xs text-zinc-400">Loading…</p>
+      ) : page ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 rounded-xl px-3 py-2.5">
+            <span className="text-xs text-zinc-500 font-mono truncate flex-1">{url}</span>
+            <button onClick={() => { navigator.clipboard.writeText(url!); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+              className="text-xs font-semibold text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors shrink-0">
+              {copied ? "Copied!" : "Copy"}
+            </button>
+            <a href={url!} target="_blank" rel="noopener noreferrer"
+              className="text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition-colors shrink-0">↗</a>
+          </div>
+          <button onClick={disable} disabled={saving}
+            className="text-xs font-semibold text-red-500 hover:text-red-400 transition-colors disabled:opacity-40">
+            {saving ? "Disabling…" : "Disable status page"}
+          </button>
+        </div>
+      ) : (
+        <button onClick={enable} disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white disabled:opacity-40 transition-colors">
+          {saving ? <Loading03Icon size={12} className="animate-spin" /> : null}
+          {saving ? "Creating…" : "Enable status page"}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function DbIncidentsSection({ projectId }: { projectId: string }) {
+  const [incidents, setIncidents] = useState<{ id: string; error: string | null; startedAt: string; resolvedAt: string | null; duration: number | null }[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}/incidents`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { setIncidents(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [projectId])
+
+  if (loading) return <p className="text-xs text-zinc-400 px-6">Loading incidents…</p>
+  if (!incidents.length) return null
+
+  return (
+    <div className="p-6 pt-0 max-w-3xl">
+      <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">From monitoring (DB)</p>
+      <div className="space-y-2">
+        {incidents.map(inc => (
+          <div key={inc.id} className={cn("bg-white dark:bg-zinc-900 rounded-xl border p-4 flex items-start justify-between gap-4",
+            inc.resolvedAt ? "border-zinc-200 dark:border-zinc-800" : "border-red-200 dark:border-red-900/40"
+          )}>
+            <div className="flex items-start gap-3">
+              <span className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", inc.resolvedAt ? "bg-zinc-400" : "bg-red-500 animate-pulse")} />
+              <div>
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                  {inc.resolvedAt ? "Resolved" : <span className="text-red-400">Ongoing</span>} — {inc.error || "Unreachable"}
+                </p>
+                <p className="text-xs text-zinc-400 mt-0.5">{new Date(inc.startedAt).toLocaleString()}</p>
+              </div>
+            </div>
+            {inc.duration != null && (
+              <span className="text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2.5 py-1 rounded-full shrink-0">
+                {formatDuration(inc.duration * 1000)}
+              </span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )

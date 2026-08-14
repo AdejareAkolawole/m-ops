@@ -185,6 +185,47 @@ export async function sendProjectUpAlert(to: string, projectName: string, projec
   `, `<a href="${BASE_URL}/settings" style="color:#999;text-decoration:none;margin-right:16px">Manage alerts</a>`))
 }
 
+export async function sendProjectsRemovedEmail(to: string, name: string, kept: string[], removed: string[]) {
+  await send(to, "Your m-ops projects have been adjusted", wrap(`
+    ${badge("Free plan limit", "#b45309", "#fffbeb")}
+    <h1 style="color:#0a0a0a;font-size:24px;font-weight:700;margin:0 0 12px;letter-spacing:-0.03em">Hey ${name}, your project limit was reached.</h1>
+    <p style="color:#666;font-size:15px;line-height:1.7;margin:0 0 20px">The free plan supports up to 3 projects. We've kept your 3 oldest projects and removed the rest. Upgrade to Pro for unlimited projects.</p>
+    ${infoBox([
+      { key: "Kept", val: kept.join(", ") },
+      { key: "Removed", val: removed.join(", ") },
+    ])}
+    ${cta("Upgrade to Pro — $2/mo →", `${BASE_URL}/settings?tab=billing`)}
+    <p style="font-size:13px;color:#aaa;margin:20px 0 0">Questions? Reply to this email and we'll help.</p>
+  `))
+}
+
+export async function sendWeeklyDigest(to: string, name: string, projects: { name: string; uptime: number; incidents: number; avgMs: number | null }[]) {
+  const rows = projects.map(p => `
+    <tr style="border-bottom:1px solid #f0f0f0">
+      <td style="font-size:13px;color:#222;font-weight:500;padding:10px 12px 10px 0">${p.name}</td>
+      <td style="font-size:13px;color:${p.uptime >= 99 ? "#18a34a" : p.uptime >= 95 ? "#b45309" : "#e03e3e"};font-weight:700;padding:10px 12px;text-align:center">${p.uptime.toFixed(2)}%</td>
+      <td style="font-size:13px;color:${p.incidents === 0 ? "#18a34a" : "#e03e3e"};font-weight:600;padding:10px 12px;text-align:center">${p.incidents}</td>
+      <td style="font-size:13px;color:#666;padding:10px 0 10px 12px;text-align:right">${p.avgMs != null ? `${p.avgMs}ms` : "—"}</td>
+    </tr>`).join("")
+
+  await send(to, "Your weekly m-ops report", wrap(`
+    <h1 style="color:#0a0a0a;font-size:24px;font-weight:700;margin:0 0 6px;letter-spacing:-0.03em">Weekly report</h1>
+    <p style="color:#aaa;font-size:13px;margin:0 0 28px">Last 7 days across all your projects</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:2px solid #f0f0f0">
+          <th style="font-size:11px;color:#aaa;font-weight:600;text-align:left;padding:0 12px 10px 0;text-transform:uppercase;letter-spacing:0.06em">Project</th>
+          <th style="font-size:11px;color:#aaa;font-weight:600;text-align:center;padding:0 12px 10px;text-transform:uppercase;letter-spacing:0.06em">Uptime</th>
+          <th style="font-size:11px;color:#aaa;font-weight:600;text-align:center;padding:0 12px 10px;text-transform:uppercase;letter-spacing:0.06em">Incidents</th>
+          <th style="font-size:11px;color:#aaa;font-weight:600;text-align:right;padding:0 0 10px 12px;text-transform:uppercase;letter-spacing:0.06em">Avg Response</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:28px">${cta("View full dashboard →", `${BASE_URL}/dashboard`)}</div>
+  `))
+}
+
 export async function sendSupportCallAlert(userName: string | null, userEmail: string | null, topic: string, date: string | null, time: string | null) {
   await send(ADMIN, `[m-ops] Support call: ${topic}`, wrap(`
     ${badge("Support call booked", "#0a0a0a", "#f0f0f0")}
