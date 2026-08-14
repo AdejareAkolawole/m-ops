@@ -94,29 +94,44 @@ export default function Home() {
   const [showManagePicker, setShowManagePicker] = useState(false)
   const [uptime, setUptime] = useState<Record<string, UptimeResult>>({})
   const uptimeRef = useRef<Record<string, UptimeResult>>({})
+  const [vercelToken, setVercelToken] = useState<string | null>(null)
+  const [vercelTeamId, setVercelTeamId] = useState<string | null>(null)
   const [connectingProvider, setConnectingProvider] = useState<HostingProvider | null>(null)
   const [signingOut, setSigningOut] = useState(false)
   const prevStatusRef = useRef<Record<string, boolean | undefined>>({})
 
   useEffect(() => {
     if (session?.user?.id) initStore(session.user.id)
-    const account = getVercelAccount()
-    setVercelConnected(!!account)
-    const all = getVercelProjects()
-    setAllVercelProjects(all)
-    const selectedIds = getVercelSelectedIds()
-    if (selectedIds !== null && selectedIds.length > 0) {
-      setSelectedVercelIds(selectedIds)
-      setVercelProjects(all.filter((p) => selectedIds.includes(p.id)))
-    } else if (selectedIds !== null && selectedIds.length === 0) {
-      // Empty selection saved — show all projects (treat as "show all")
-      setSelectedVercelIds(all.map((p) => p.id))
-      setVercelProjects(all)
-    } else if (all.length > 0) {
-      // Never chosen yet — show picker
-      setShowPicker(true)
-      setAllVercelProjects(all)
-    }
+
+    // Load Vercel connection from DB, then fetch live projects
+    fetch("/api/user/vercel-connection")
+      .then(r => r.ok ? r.json() : null)
+      .then(async (conn) => {
+        if (!conn?.token) return
+        setVercelToken(conn.token)
+        setVercelTeamId(conn.teamId ?? null)
+        setVercelConnected(true)
+        // Fetch live Vercel projects
+        const res = await fetch("/api/vercel/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: conn.token, teamId: conn.teamId }),
+        })
+        if (!res.ok) return
+        const all: VercelSyncedProject[] = await res.json()
+        setAllVercelProjects(all)
+        const selectedIds: string[] | null = conn.selectedIds
+        if (selectedIds && selectedIds.length > 0) {
+          setSelectedVercelIds(selectedIds)
+          setVercelProjects(all.filter(p => selectedIds.includes(p.id)))
+        } else if (selectedIds && selectedIds.length === 0) {
+          setSelectedVercelIds(all.map(p => p.id))
+          setVercelProjects(all)
+        } else {
+          setShowPicker(true)
+        }
+      }).catch(() => {})
+
     // Load manual projects from DB
     fetch("/api/projects")
       .then(r => r.json())
@@ -153,7 +168,7 @@ export default function Home() {
     setMounted(true)
   }, [])
 
-  const account = mounted ? getVercelAccount() : null
+  const account = vercelToken ? { token: vercelToken, teamId: vercelTeamId } : null
 
   // Run uptime check for a single URL
   const checkUptime = useCallback(async (id: string, url: string, projectName?: string) => {
@@ -211,8 +226,7 @@ export default function Home() {
     if (!mounted) return
 
     function pingAll() {
-      const vProjects = getVercelProjects()
-      for (const p of vProjects) {
+      for (const p of vercelProjects) {
         const url = p.productionUrl ?? (p.latestDeployment ? `https://${p.latestDeployment.url}` : null)
         if (url) checkUptime(p.id, url, p.name)
       }
@@ -224,13 +238,20 @@ export default function Home() {
     pingAll()
     const interval = setInterval(pingAll, checkIntervalMs)
     return () => clearInterval(interval)
-  }, [mounted, checkUptime, manualProjects, checkIntervalMs])
+  }, [mounted, checkUptime, manualProjects, vercelProjects, checkIntervalMs])
 
-  function handleVercelConnected(ps: VercelSyncedProject[]) {
+  function handleVercelConnected(ps: VercelSyncedProject[], token?: string, teamId?: string) {
+    if (token) {
+      setVercelToken(token)
+      setVercelTeamId(teamId ?? null)
+      fetch("/api/user/vercel-connection", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, teamId: teamId ?? null }),
+      }).catch(() => {})
+    }
     setAllVercelProjects(ps)
     setVercelConnected(true)
     setShowConnect(false)
-    // Always show picker after connecting so user selects what they want
     setShowPicker(true)
   }
 
@@ -242,17 +263,21 @@ export default function Home() {
     if (ids.length > available && maxProjects !== Infinity) {
       setShowUpgradeModal(true)
     }
-    saveVercelSelectedIds(limited)
     setSelectedVercelIds(limited)
     setVercelProjects(allVercelProjects.filter((p) => limited.includes(p.id)))
+    fetch("/api/user/vercel-connection", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ selectedIds: limited }),
+    }).catch(() => {})
     setShowPicker(false)
     setShowManagePicker(false)
   }
 
   function handleDisconnectVercel() {
-    if (!confirm("Disconnect Vercel? Your synced project data will be removed from this browser.")) return
-    clearVercelAccount()
-    clearVercelSelectedIds()
+    if (!confirm("Disconnect Vercel?")) return
+    fetch("/api/user/vercel-connection", { method: "DELETE" }).catch(() => {})
+    setVercelToken(null)
+    setVercelTeamId(null)
     setVercelProjects([])
     setAllVercelProjects([])
     setSelectedVercelIds([])
@@ -270,20 +295,19 @@ export default function Home() {
         body: JSON.stringify({ token: account.token, teamId: account.teamId }),
       })
       if (res.ok) {
-        const data = await res.json()
-        const existing = getVercelProjects()
-        const merged = data.map((p: VercelSyncedProject) => {
-          const prev = existing.find((e) => e.id === p.id)
+        const data: VercelSyncedProject[] = await res.json()
+        const merged = data.map((p) => {
+          const prev = allVercelProjects.find((e) => e.id === p.id)
           return prev ? { ...p, deployments: prev.deployments, domains: prev.domains, envKeys: prev.envKeys, hasDbUrl: prev.hasDbUrl, dbKey: prev.dbKey } : p
         })
-        saveVercelProjects(merged)
+        setAllVercelProjects(merged)
         const toShow = selectedVercelIds.length > 0
-          ? merged.filter((p: VercelSyncedProject) => selectedVercelIds.includes(p.id))
+          ? merged.filter((p) => selectedVercelIds.includes(p.id))
           : merged
         setVercelProjects(toShow)
       }
     } finally { setSyncing(false) }
-  }, [account, selectedVercelIds])
+  }, [account, selectedVercelIds, allVercelProjects])
 
   async function refreshVercelProject(p: VercelSyncedProject) {
     if (!account) return
@@ -304,9 +328,8 @@ export default function Home() {
           envKeys: data.envKeys,
           latestDeployment: data.deployments?.[0] ?? p.latestDeployment,
         }
-        updateVercelProject(p.id, patch)
-        const all = getVercelProjects()
-        setVercelProjects(selectedVercelIds.length > 0 ? all.filter(p => selectedVercelIds.includes(p.id)) : all)
+        setAllVercelProjects(prev => prev.map(vp => vp.id === p.id ? { ...vp, ...patch } : vp))
+        setVercelProjects(prev => prev.map(vp => vp.id === p.id ? { ...vp, ...patch } : vp))
         if (selected?.type === "vercel" && selected.project.id === p.id) {
           setSelected({ type: "vercel", project: { ...selected.project, ...patch } })
         }

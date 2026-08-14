@@ -1,13 +1,12 @@
 "use client"
 import { useState } from "react"
 import { Cancel01Icon, LinkSquare02Icon, Loading03Icon, CheckmarkCircle02Icon } from "hugeicons-react"
-import { saveVercelAccount, saveVercelProjects } from "@/lib/store"
-import { VercelAccount, VercelSyncedProject } from "@/lib/types"
+import { VercelSyncedProject } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 interface Props {
   onClose: () => void
-  onConnected: (projects: VercelSyncedProject[]) => void
+  onConnected: (projects: VercelSyncedProject[], token: string, teamId?: string) => void
 }
 
 export function ConnectVercel({ onClose, onConnected }: Props) {
@@ -27,11 +26,7 @@ export function ConnectVercel({ onClose, onConnected }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to connect")
-
-      const account: VercelAccount = { token: token.trim(), connectedAt: new Date().toISOString() }
-      saveVercelAccount(account)
-      saveVercelProjects(data)
-      onConnected(data)
+      onConnected(data, token.trim())
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to connect")
     } finally {
@@ -96,7 +91,7 @@ export function ConnectVercel({ onClose, onConnected }: Props) {
               className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 font-mono"
             />
             <p className="text-[11px] text-zinc-400 mt-1.5">
-              Stored locally on your device only. Never sent anywhere except Vercel&apos;s API.
+              Stored securely in your account. Only used to call Vercel&apos;s API.
             </p>
           </div>
 
