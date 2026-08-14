@@ -76,7 +76,7 @@ const phaseColors: Record<Status, { label: string; dot: string; tag: string }> =
 
 export default function RoadmapPage() {
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", color: "#f0f0ee", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#080808", color: "#f0f0ee" }}>
       <div style={{ maxWidth: 700, margin: "0 auto", padding: "64px 24px 96px" }}>
 
         {/* Header */}
