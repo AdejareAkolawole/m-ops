@@ -163,8 +163,9 @@ export function MonitoringDashboard({ vercelProjects, manualProjects, allChecks,
           const u = uptime[proj.id]
           const checks = allChecks[proj.id] || []
           const last = checks[0]
-          const isOnline = u?.ok === true
-          const isOffline = u?.ok === false
+          const isChecking = !u || (u as any).checking === true
+          const isOnline = !isChecking && u?.ok === true
+          const isOffline = !isChecking && u?.ok === false
 
           return (
             <button
@@ -204,7 +205,7 @@ export function MonitoringDashboard({ vercelProjects, manualProjects, allChecks,
                     border: `1px solid ${isOnline ? `${C_OK}25` : isOffline ? `${C_CRIT}25` : "#1a1a1a"}`,
                   }}>
                     <span className={isOnline ? "status-dot-nominal" : isOffline ? "status-dot-offline" : ""} style={{ width: "4px", height: "4px", borderRadius: "50%", background: isOnline ? C_OK : isOffline ? C_CRIT : "#282828", flexShrink: 0 }} />
-                    {isOnline ? "NOMINAL" : isOffline ? "UNREACHABLE" : "PENDING"}
+                    {isChecking ? "CHECKING…" : isOnline ? "NOMINAL" : "UNREACHABLE"}
                   </span>
 
                   {/* Type tag */}

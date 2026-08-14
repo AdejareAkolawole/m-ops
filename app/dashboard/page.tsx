@@ -235,9 +235,16 @@ export default function Home() {
   }
 
   function handlePickerConfirm(ids: string[]) {
-    saveVercelSelectedIds(ids)
-    setSelectedVercelIds(ids)
-    setVercelProjects(allVercelProjects.filter((p) => ids.includes(p.id)))
+    const maxProjects = planCfg?.maxProjects ?? 3
+    const manualCount = manualProjects.length
+    const available = maxProjects === Infinity ? ids.length : Math.max(0, maxProjects - manualCount)
+    const limited = ids.slice(0, available)
+    if (ids.length > available && maxProjects !== Infinity) {
+      setShowUpgradeModal(true)
+    }
+    saveVercelSelectedIds(limited)
+    setSelectedVercelIds(limited)
+    setVercelProjects(allVercelProjects.filter((p) => limited.includes(p.id)))
     setShowPicker(false)
     setShowManagePicker(false)
   }
